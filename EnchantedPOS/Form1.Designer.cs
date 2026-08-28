@@ -31,16 +31,14 @@
             lblName = new Label();
             lblAddress = new Label();
             gbPOSLogin = new GroupBox();
+            btnLogOut = new Button();
             txtC_Pass = new TextBox();
             lblCashierPass = new Label();
             btnLogIn = new Button();
             pictureBox1 = new PictureBox();
-            lblDate = new Label();
-            dateTimePicker = new DateTimePicker();
-            lblShift = new Label();
-            textBox1 = new TextBox();
-            lblChange = new Label();
-            txtChange = new TextBox();
+            btnAdmin = new Button();
+            btnReports = new Button();
+            btnPOS = new Button();
             gbPOSLogin.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             SuspendLayout();
@@ -48,7 +46,9 @@
             // lblName
             // 
             lblName.AutoSize = true;
+            lblName.BackColor = Color.Transparent;
             lblName.Font = new Font("Segoe UI Black", 20.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            lblName.ForeColor = SystemColors.ControlLightLight;
             lblName.Location = new Point(34, 334);
             lblName.Name = "lblName";
             lblName.Size = new Size(256, 37);
@@ -58,6 +58,8 @@
             // lblAddress
             // 
             lblAddress.AutoSize = true;
+            lblAddress.BackColor = Color.Transparent;
+            lblAddress.ForeColor = SystemColors.ControlLightLight;
             lblAddress.Location = new Point(45, 380);
             lblAddress.Name = "lblAddress";
             lblAddress.Size = new Size(71, 15);
@@ -66,47 +68,62 @@
             // 
             // gbPOSLogin
             // 
-            gbPOSLogin.Controls.Add(txtChange);
-            gbPOSLogin.Controls.Add(lblChange);
-            gbPOSLogin.Controls.Add(textBox1);
-            gbPOSLogin.Controls.Add(lblShift);
-            gbPOSLogin.Controls.Add(dateTimePicker);
-            gbPOSLogin.Controls.Add(lblDate);
+            gbPOSLogin.BackColor = Color.Transparent;
+            gbPOSLogin.Controls.Add(btnLogOut);
             gbPOSLogin.Controls.Add(txtC_Pass);
             gbPOSLogin.Controls.Add(lblCashierPass);
             gbPOSLogin.Controls.Add(btnLogIn);
             gbPOSLogin.Controls.Add(pictureBox1);
-            gbPOSLogin.Location = new Point(389, 15);
+            gbPOSLogin.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            gbPOSLogin.ForeColor = SystemColors.ControlLightLight;
+            gbPOSLogin.Location = new Point(369, 141);
             gbPOSLogin.Name = "gbPOSLogin";
             gbPOSLogin.Size = new Size(385, 254);
             gbPOSLogin.TabIndex = 2;
             gbPOSLogin.TabStop = false;
-            gbPOSLogin.Text = "Point-of-Sales Log-In";
+            gbPOSLogin.Text = "Log-In";
+            // 
+            // btnLogOut
+            // 
+            btnLogOut.Enabled = false;
+            btnLogOut.ForeColor = SystemColors.ActiveCaptionText;
+            btnLogOut.Location = new Point(280, 166);
+            btnLogOut.Name = "btnLogOut";
+            btnLogOut.Size = new Size(91, 58);
+            btnLogOut.TabIndex = 4;
+            btnLogOut.Text = "LOG OUT";
+            btnLogOut.UseVisualStyleBackColor = true;
+            btnLogOut.Click += btnLogOut_Click;
             // 
             // txtC_Pass
             // 
-            txtC_Pass.Location = new Point(152, 40);
+            txtC_Pass.Location = new Point(152, 64);
             txtC_Pass.Name = "txtC_Pass";
-            txtC_Pass.Size = new Size(219, 23);
+            txtC_Pass.Size = new Size(219, 25);
             txtC_Pass.TabIndex = 3;
+            txtC_Pass.UseSystemPasswordChar = true;
             // 
             // lblCashierPass
             // 
             lblCashierPass.AutoSize = true;
-            lblCashierPass.Location = new Point(152, 22);
+            lblCashierPass.ForeColor = SystemColors.ControlLightLight;
+            lblCashierPass.Location = new Point(152, 37);
             lblCashierPass.Name = "lblCashierPass";
-            lblCashierPass.Size = new Size(110, 15);
+            lblCashierPass.Size = new Size(119, 17);
             lblCashierPass.TabIndex = 2;
-            lblCashierPass.Text = "Cashier's Password:";
+            lblCashierPass.Text = "Enter Access Code";
             // 
             // btnLogIn
             // 
-            btnLogIn.Location = new Point(270, 172);
+            btnLogIn.BackColor = Color.ForestGreen;
+            btnLogIn.FlatStyle = FlatStyle.Flat;
+            btnLogIn.ForeColor = SystemColors.ControlLightLight;
+            btnLogIn.Location = new Point(152, 102);
             btnLogIn.Name = "btnLogIn";
-            btnLogIn.Size = new Size(101, 58);
+            btnLogIn.Size = new Size(219, 58);
             btnLogIn.TabIndex = 1;
             btnLogIn.Text = "LOG IN";
-            btnLogIn.UseVisualStyleBackColor = true;
+            btnLogIn.UseVisualStyleBackColor = false;
             btnLogIn.Click += btnLogIn_Click;
             // 
             // pictureBox1
@@ -117,62 +134,54 @@
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
             // 
-            // lblDate
+            // btnAdmin
             // 
-            lblDate.AutoSize = true;
-            lblDate.Location = new Point(152, 66);
-            lblDate.Name = "lblDate";
-            lblDate.Size = new Size(34, 15);
-            lblDate.TabIndex = 4;
-            lblDate.Text = "Date:";
+            btnAdmin.Enabled = false;
+            btnAdmin.Location = new Point(632, 485);
+            btnAdmin.Name = "btnAdmin";
+            btnAdmin.Size = new Size(122, 113);
+            btnAdmin.TabIndex = 3;
+            btnAdmin.Text = "Admin Menu";
+            btnAdmin.TextAlign = ContentAlignment.BottomCenter;
+            btnAdmin.UseVisualStyleBackColor = true;
             // 
-            // dateTimePicker
+            // btnReports
             // 
-            dateTimePicker.Format = DateTimePickerFormat.Short;
-            dateTimePicker.Location = new Point(152, 84);
-            dateTimePicker.Name = "dateTimePicker";
-            dateTimePicker.Size = new Size(110, 23);
-            dateTimePicker.TabIndex = 5;
+            btnReports.Enabled = false;
+            btnReports.Location = new Point(503, 485);
+            btnReports.Name = "btnReports";
+            btnReports.Size = new Size(122, 113);
+            btnReports.TabIndex = 4;
+            btnReports.Text = "Reports";
+            btnReports.TextAlign = ContentAlignment.BottomCenter;
+            btnReports.UseVisualStyleBackColor = true;
             // 
-            // lblShift
+            // btnPOS
             // 
-            lblShift.AutoSize = true;
-            lblShift.Location = new Point(278, 66);
-            lblShift.Name = "lblShift";
-            lblShift.Size = new Size(81, 15);
-            lblShift.TabIndex = 6;
-            lblShift.Text = "Shift Number:";
-            // 
-            // textBox1
-            // 
-            textBox1.Location = new Point(327, 84);
-            textBox1.Name = "textBox1";
-            textBox1.Size = new Size(44, 23);
-            textBox1.TabIndex = 7;
-            textBox1.Text = "1";
-            // 
-            // lblChange
-            // 
-            lblChange.AutoSize = true;
-            lblChange.Location = new Point(152, 110);
-            lblChange.Name = "lblChange";
-            lblChange.Size = new Size(81, 15);
-            lblChange.TabIndex = 8;
-            lblChange.Text = "Change Fund:";
-            // 
-            // txtChange
-            // 
-            txtChange.Location = new Point(152, 128);
-            txtChange.Name = "txtChange";
-            txtChange.Size = new Size(219, 23);
-            txtChange.TabIndex = 9;
+            btnPOS.BackColor = Color.Transparent;
+            btnPOS.BackgroundImage = Properties.Resources.cashier__3_;
+            btnPOS.BackgroundImageLayout = ImageLayout.Zoom;
+            btnPOS.Enabled = false;
+            btnPOS.Location = new Point(375, 485);
+            btnPOS.Name = "btnPOS";
+            btnPOS.Size = new Size(122, 113);
+            btnPOS.TabIndex = 5;
+            btnPOS.Text = "Point-of-Sales";
+            btnPOS.TextAlign = ContentAlignment.BottomCenter;
+            btnPOS.UseVisualStyleBackColor = false;
+            btnPOS.Click += btnPOS_Click;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
-            ClientSize = new Size(800, 450);
+            BackgroundImage = Properties.Resources._2788686;
+            BackgroundImageLayout = ImageLayout.None;
+            ClientSize = new Size(1106, 636);
+            Controls.Add(btnPOS);
+            Controls.Add(btnReports);
+            Controls.Add(btnAdmin);
             Controls.Add(gbPOSLogin);
             Controls.Add(lblAddress);
             Controls.Add(lblName);
@@ -180,7 +189,7 @@
             MaximizeBox = false;
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Enchanted POS";
+            Text = "EnchantedPOS";
             gbPOSLogin.ResumeLayout(false);
             gbPOSLogin.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
@@ -197,11 +206,9 @@
         private Button btnLogIn;
         private PictureBox pictureBox1;
         private TextBox txtC_Pass;
-        private Label lblChange;
-        private TextBox textBox1;
-        private Label lblShift;
-        private DateTimePicker dateTimePicker;
-        private Label lblDate;
-        private TextBox txtChange;
+        private Button btnAdmin;
+        private Button btnReports;
+        private Button btnPOS;
+        private Button btnLogOut;
     }
 }
