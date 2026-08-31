@@ -12,18 +12,61 @@ namespace EnchantedPOS
 {
     public partial class formPOS : Form
     {
+        private int currentCashierId;
+        private string currentCashier;
+        private int currentShift;
+        private decimal currentChangeFunds;
+        private DateTime currentTransDate;
+        private int currentStation;
+        private int currentInvoiceNumber = 0;
 
-
-        public formPOS()
+        public formPOS(int cashierId, string cashier, int shift, decimal funds, DateTime date, int station)
         {
             InitializeComponent();
-
-
-
             this.KeyPreview = true;
+
+            currentCashierId = cashierId;
+            currentCashier = cashier;
+            currentShift = shift;
+            currentChangeFunds = funds;
+            currentTransDate = date;
+            currentStation = station;
+
+        }
+
+        // Real-time save method
+        private void SaveToTempRegister(string barcode, string engName, decimal qty, decimal uPrice, decimal totalAmnt)
+        {
+            string query = @"INSERT INTO TEMP_REGISTER
+            (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            {
+                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("?", currentInvoiceNumber);
+                    cmd.Parameters.AddWithValue("?", currentCashierId);
+                    cmd.Parameters.AddWithValue("?", currentShift);
+                    cmd.Parameters.AddWithValue("?", currentTransDate.ToString("yyyy-MM-dd"));
+                    cmd.Parameters.AddWithValue("?", currentChangeFunds);
+                    cmd.Parameters.AddWithValue("?", barcode);
+                    cmd.Parameters.AddWithValue("?", engName);
+                    cmd.Parameters.AddWithValue("?", qty);
+                    cmd.Parameters.AddWithValue("?", uPrice);
+                    cmd.Parameters.AddWithValue("?", totalAmnt);
+                    cmd.Parameters.AddWithValue("?", currentStation);
+
+                    con.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
 
         private bool isRecalculating = false;
+
+        // defaults to regular price
+        private string currentDiscountType = "Regular";
 
 
 
@@ -40,6 +83,78 @@ namespace EnchantedPOS
         }
 
 
+        private string SelectDiscountType()
+        {
+            Form disc = new Form()
+            {
+                Width = 250,
+                Height = 260,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Select Discount Type",
+                StartPosition = FormStartPosition.CenterParent,
+                MinimizeBox = false,
+                MaximizeBox = false
+            };
+
+            Button btnReg = new Button() { Text = "Regular Price", Top = 20, Left = 35, Width = 160, DialogResult = DialogResult.Yes };
+            Button btnWholesale = new Button() { Text = "Wholesale", Top = 60, Left = 35, Width = 160, DialogResult = DialogResult.No};
+            Button btnVIP = new Button() { Text = "VIP (B)", Top = 100, Left = 35, Width = 160, DialogResult = DialogResult.OK };
+            Button btnRoyal = new Button() { Text = "Royal (C)", Top = 140, Left = 35, Width = 160, DialogResult = DialogResult.Ignore };
+            Button btnCancel = new Button() { Text = "Cancel", Top = 180, Left = 35, Width = 160, DialogResult = DialogResult.Cancel };
+
+            disc.Controls.Add(btnReg);
+            disc.Controls.Add(btnWholesale);
+            disc.Controls.Add(btnVIP);
+            disc.Controls.Add(btnRoyal);
+            disc.Controls.Add(btnCancel);
+
+            DialogResult result = disc.ShowDialog();
+
+            // Return the selected type based on which button they clicked
+            if (result == DialogResult.Yes) return "Regular";
+            if (result == DialogResult.No) return "Wholesale";
+            if (result == DialogResult.OK) return "VIP";
+            if (result == DialogResult.Ignore) return "Royal";
+
+            return null;
+        }
+
+        private bool CheckGlobalPassword()
+        {
+            string globalPassword = "1"; //Global Password
+
+            Form prompt = new Form()
+            {
+                Width = 300,
+                Height = 160,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Manager Overide",
+                StartPosition = FormStartPosition.CenterScreen,
+                MinimizeBox = false,
+                MaximizeBox = false
+            };
+
+            Label txtPassLabel = new Label() { Left = 20, Top = 20, Text = "Enter Password: " };
+            TextBox inputBox = new TextBox() { Left = 20, Top = 45, Width = 240, PasswordChar = '*' };
+            Button confirmation = new Button() { Text = "OK", Left = 160, Width = 100, Top = 80, DialogResult = DialogResult.OK };
+            Button cancel = new Button() { Text = "Cancel", Left = 50, Width = 100, Top = 80, DialogResult = DialogResult.Cancel };
+
+            prompt.Controls.Add(txtPassLabel);
+            prompt.Controls.Add(inputBox);
+            prompt.Controls.Add(confirmation);
+            prompt.Controls.Add(cancel);
+            prompt.AcceptButton = confirmation; // Pressing Enter clicks OK
+
+            // Show the prompt. If they click OK, check if the password matches.
+            if (prompt.ShowDialog() == DialogResult.OK)
+            {
+                return inputBox.Text == globalPassword;
+            }
+
+            return false; // They clicked Cancel or closed the window
+        }
+
+
 
         private void formPOS_FormClosed(object sender, FormClosedEventArgs e)
         {
@@ -53,9 +168,27 @@ namespace EnchantedPOS
 
         private void formPOS_Load(object sender, EventArgs e)
         {
-            // this.Focus();
-            txtBarcode.Focus();
+            setupDataGridView();
+            LoadRecoveredTransactions();
+
+            this.ActiveControl = txtBarcode;
+
             this.dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
+        }
+
+        private void ClearTempRegister()
+        {
+            string query = "DELETE FROM TEMP_REGISTER WHERE STATION_NUM = ?";
+            
+            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            {
+                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("?", currentStation);
+                    con.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
 
         private void setupDataGridView()
@@ -68,6 +201,37 @@ namespace EnchantedPOS
 
         private void formPOS_KeyDown(object sender, KeyEventArgs e)
         {
+
+            // Press ESC for Discount
+            if (e.KeyCode == Keys.Escape)
+            {
+                if (!CheckGlobalPassword()) // If the password is incorrect
+                {
+                    MessageBox.Show("Incorrect Password.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    return;
+                }
+
+                string selectedType = SelectDiscountType();
+
+                // If selected a discount 
+
+                if(selectedType != null)
+                {
+                    currentDiscountType = selectedType;
+                    // MessageBox.Show($"Price Mode changed to: {currentDiscountType}.\nAll newly scanned items will use this price tier.", "Mode Updated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    if (currentDiscountType == "Regular")
+                    {
+                        labelSales.Text = "Sales Entry";
+                    }
+                    else
+                    {
+                        labelSales.Text = $"Sales Entry ({currentDiscountType})";
+                    }
+                    txtBarcode.Focus();
+                }
+            }
 
             // Press "/" for Quantity
             if (e.KeyCode == Keys.Divide)
@@ -82,8 +246,17 @@ namespace EnchantedPOS
             }
 
             // Press F2 to Edit or Void
-            if (e.KeyCode == Keys.F2)
+            if (e.KeyCode == Keys.F3)
             {
+                //Requires  password first
+                if (!CheckGlobalPassword()) // If the password is incorrect
+                {
+                    MessageBox.Show("Incorrect Password.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    return;
+                }
+                
                 DialogResult result = MessageBox.Show(
                     "Press 'Yes' to EDIT the transaction (Discount/Price).\nPress 'No' to VOID (Clear all items).\nPress 'Cancel' to return.",
             "Edit or Void",
@@ -94,6 +267,7 @@ namespace EnchantedPOS
                 {
                     dataGridView1.Rows.Clear();
                     UpdateTotalAmount();
+                    ClearTempRegister();
                     txtBarcode.Focus();
                 }
                 else if (result == DialogResult.Yes)  //Edit
@@ -176,13 +350,13 @@ namespace EnchantedPOS
 
             //Add the item item in the DataGrid, query the database
 
-            string query = "SELECT ENG_NAME, R_PRICE FROM PRODMAST WHERE BARCODE = ?";
+            string query = "SELECT ENG_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C FROM PRODMAST WHERE BARCODE = ?";
 
             using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
             {
                 using (OleDbCommand cmd = new OleDbCommand(query, con))
                 {
-                    cmd.Parameters.AddWithValue("?", txtBarcode.Text);
+                    cmd.Parameters.AddWithValue("?", Barcode);
 
                     try
                     {
@@ -193,7 +367,25 @@ namespace EnchantedPOS
                             {
 
                                 string prod_name = reader["ENG_NAME"].ToString();
-                                decimal uPrice = Convert.ToDecimal(reader["R_PRICE"]);
+                                // decimal uPrice = Convert.ToDecimal(reader["R_PRICE"]);
+                                decimal uPrice = 0m;
+
+                                if(currentDiscountType == "Regular")
+                                {
+                                    uPrice = Convert.ToDecimal(reader["R_PRICE"]);
+                                }
+                                else if(currentDiscountType == "Wholesale")
+                                {
+                                    uPrice = Convert.ToDecimal(reader["D_PRICE_A"]);
+                                }
+                                else if(currentDiscountType == "VIP")
+                                {
+                                    uPrice = Convert.ToDecimal(reader["D_PRICE_B"]);
+                                }
+                                else if(currentDiscountType == "Royal")
+                                {
+                                    uPrice = Convert.ToDecimal(reader["D_PRICE_C"]);
+                                }
 
                                 //Discount logic
                                 decimal discountPercent = 0m;
@@ -204,7 +396,7 @@ namespace EnchantedPOS
 
                                 //Add the Item to the Data Grid
                                 dataGridView1.Rows.Add(
-                                    txtBarcode.Text,
+                                    Barcode,
                                     prod_name,
                                     qtyToAdd,
                                     effectiveSrp.ToString("F2"),
@@ -217,6 +409,8 @@ namespace EnchantedPOS
                                 txtProdName.Text = prod_name;
                                 txtUnitPrice.Text = effectiveSrp.ToString("F2");
                                 txtPrice.Text = amount.ToString("F2");
+
+                                SaveToTempRegister(Barcode, prod_name, qtyToAdd, effectiveSrp, amount);
 
                                 UpdateTotalAmount();
                             }
@@ -234,19 +428,107 @@ namespace EnchantedPOS
             }
         }
 
+        private void LoadRecoveredTransactions()
+        {
+            string query = @"SELECT INVOICE, BAR_CODE, ENG_NAME, QTY, U_PRICE, TOTAL_AMNT
+                            FROM TEMP_REGISTER
+                            WHERE STATION_NUM = ?";
+
+            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            {
+                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("?", currentStation); // Current Cashier instead of Station?
+
+                    try
+                    {
+                        con.Open();
+                        using (OleDbDataReader reader = cmd.ExecuteReader())
+                        {
+                            bool hasRecoveredItems = false;
+
+                            while (reader.Read())
+                            {
+                                hasRecoveredItems = true;
+
+                                //Grab the Invoice Number
+                                currentInvoiceNumber = Convert.ToInt32(reader["INVOICE"]);
+
+                                string barcode = reader["BAR_CODE"].ToString();
+                                string name = reader["ENG_NAME"].ToString();
+                                decimal qty = Convert.ToDecimal(reader["QTY"]);
+                                decimal uPrice = Convert.ToDecimal(reader["U_PRICE"]);
+                                decimal amount = Convert.ToDecimal(reader["TOTAL_AMNT"]);
+
+                                dataGridView1.Rows.Add(
+                                    barcode,
+                                    name,
+                                    qty,
+                                    uPrice.ToString("F2"),
+                                    amount.ToString("F2"),
+                                    "0%", // Default discount
+                                    uPrice.ToString("F2") // Defaulting regprice
+                                    );
+                            }
+
+                            if (hasRecoveredItems)
+                            {
+                                UpdateTotalAmount();
+                                MessageBox.Show("An interrupted transaction was recovered succesfully.", "Session restored", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                            else
+                            {
+                                // If there is nothing to recover, generate a fresh invoice number
+                                GenerateNewInvoiceNumber();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error recovering transaction: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
         private void txtBarcode_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
                 string scannedBarcode = txtBarcode.Text.Trim();
 
+                /**
                 if (!string.IsNullOrEmpty(scannedBarcode))
                 {
                     processItem(scannedBarcode);
                 }
                 else
                 {
-                    MessageBox.Show("Opening Product Master");
+                    formProdBrowse f = new formProdBrowse();
+                    
+                }
+                **/
+
+                //If the Barcode is empty and Enter is pressed then the Browse Product Will Open
+                if (string.IsNullOrEmpty(scannedBarcode))
+                {
+                    formProdBrowse browseForm = new formProdBrowse();
+
+                    if (browseForm.ShowDialog() == DialogResult.OK)
+                    {
+                        scannedBarcode = browseForm.SelectedBarcode;
+
+                        if (!string.IsNullOrEmpty(scannedBarcode)) {
+
+                            processItem(scannedBarcode);
+
+                        }
+                    }
+                }
+                else
+                {
+                    //Normal Item Scan
+                    processItem(scannedBarcode);
                 }
 
                 //Resets the field after scanning
@@ -329,5 +611,36 @@ namespace EnchantedPOS
                 isRecalculating = false; // Unlock the grid
             }
         }
+
+        private void GenerateNewInvoiceNumber()
+        {
+            string query = "SELECT MAX(INVOICE) FROM REGISTER";
+
+            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            {
+                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                {
+                    try
+                    {
+                        con.Open();
+                        object result = cmd.ExecuteScalar();
+
+                        if (result != DBNull.Value && result != null)
+                        {
+                            currentInvoiceNumber = Convert.ToInt32(result) + 1;
+                        }
+                        else
+                        {
+                            currentInvoiceNumber = 10001;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error generating invoice number: " + ex.Message, "Database Error");
+                    }
+                }
+            }
+        }
+
     }
 }

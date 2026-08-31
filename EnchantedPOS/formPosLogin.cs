@@ -11,12 +11,15 @@ namespace EnchantedPOS
     public partial class formPosLogin : Form
     {
 
-        
+        public int ShiftNumber { get; private set;  }
+        public decimal ChangeFunds { get; private set;  }
+        public DateTime TransDate { get; private set; }
+        public int StationNumber { get; private set; } = 1;
 
         private string cashierName = "";
 
         private bool loginBtn;
-        
+
         public formPosLogin(string passedName, bool passedIsAdmin, bool passedLogin)
         {
             InitializeComponent();
@@ -38,6 +41,14 @@ namespace EnchantedPOS
 
         private void btnLogin2_Click(object sender, EventArgs e)
         {
+            // Capture the data before closing the login form
+            int.TryParse(txtShiftNumber.Text, out int shift);
+            decimal.TryParse(txtChangeFunds.Text, out decimal funds);
+
+            ShiftNumber = shift;
+            ChangeFunds = funds;
+            TransDate = dateTrans.Value;
+
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
@@ -48,6 +59,11 @@ namespace EnchantedPOS
 
             f.disablelogIn();
             labelWelcome.Text = $"Hello, {cashierName}";
+
+        }
+
+        private void dateTimePicker_ValueChanged(object sender, EventArgs e)
+        {
 
         }
     }

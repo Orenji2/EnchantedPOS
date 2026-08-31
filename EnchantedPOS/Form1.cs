@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.VisualBasic.ApplicationServices;
 using System.Data.OleDb;
 using System.Diagnostics.Eventing.Reader;
+using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -11,9 +12,12 @@ namespace EnchantedPOS
     public partial class Form1 : Form
     {
         public string currentFirstName = "";
+        public int currentCashierId;
         public bool currentIsAdmin;
 
         public static bool boolLoginStatus;
+
+
         public Form1(bool boolLogin = false)
         {
             InitializeComponent();
@@ -88,7 +92,7 @@ namespace EnchantedPOS
 
             using (OleDbConnection con = new OleDbConnection(connString))
             {
-                string query = "SELECT F_NAME, IS_ADMIN, IS_CASHIER FROM LOGIN WHERE U_PASS = ?";
+                string query = "SELECT USER_ID, F_NAME, IS_ADMIN, IS_CASHIER FROM LOGIN WHERE U_PASS = ?";
 
                 using (OleDbCommand cmd = new OleDbCommand(query, con))
                 {
@@ -102,12 +106,13 @@ namespace EnchantedPOS
                             if (reader.Read())
                             {
                                 // User exists
+                                int id = Convert.ToInt32(reader["USER_ID"]);
                                 string fName = reader["F_NAME"].ToString();
 
                                 bool isAdmin = Convert.ToBoolean(reader["IS_ADMIN"]);
                                 bool isCashier = Convert.ToBoolean(reader["IS_CASHIER"]);
 
-                                RouteCashier(fName, isAdmin, isCashier);
+                                RouteCashier(id, fName, isAdmin, isCashier);
                             }
                             else
                             {
@@ -123,11 +128,10 @@ namespace EnchantedPOS
             }
         }
 
-        private void RouteCashier(string fName, bool isAdmin, bool isCashier)
+        private void RouteCashier(int id, string fName, bool isAdmin, bool isCashier)
         {
-            formPOS pos = new formPOS();
-
-
+            //Global values
+            currentCashierId = id; 
             currentFirstName = fName;
             currentIsAdmin = isAdmin;
 
@@ -215,7 +219,14 @@ namespace EnchantedPOS
                     if (result == DialogResult.OK)
                     {
                         // They clicked Login2! Open the POS form.
-                        formPOS pos = new formPOS();
+                        formPOS pos = new formPOS(
+                            currentCashierId,
+                            firstName,
+                            login.ShiftNumber,
+                            login.ChangeFunds,
+                            login.TransDate,
+                            login.StationNumber
+                            );
                         pos.Show();
                     }
                     else if (result == DialogResult.Cancel)
@@ -257,7 +268,14 @@ namespace EnchantedPOS
                     if (result == DialogResult.OK)
                     {
                         // They clicked Login2! Open the POS form.
-                        formPOS pos = new formPOS();
+                        formPOS pos = new formPOS(
+                            currentCashierId,
+                            firstName,
+                            login.ShiftNumber,
+                            login.ChangeFunds,
+                            login.TransDate,
+                            login.StationNumber
+                            );
                         pos.Show();
                     }
                     else if (result == DialogResult.Cancel)

@@ -32,7 +32,7 @@
             label1 = new Label();
             label2 = new Label();
             labelWelcome = new Label();
-            dateTimePicker = new DateTimePicker();
+            dateTrans = new DateTimePicker();
             txtShiftNumber = new TextBox();
             txtChangeFunds = new TextBox();
             btnLogin2 = new Button();
@@ -76,14 +76,15 @@
             labelWelcome.TabIndex = 3;
             labelWelcome.Text = "<Welcome>";
             // 
-            // dateTimePicker
+            // dateTrans
             // 
-            dateTimePicker.Format = DateTimePickerFormat.Short;
-            dateTimePicker.ImeMode = ImeMode.NoControl;
-            dateTimePicker.Location = new Point(118, 57);
-            dateTimePicker.Name = "dateTimePicker";
-            dateTimePicker.Size = new Size(174, 23);
-            dateTimePicker.TabIndex = 4;
+            dateTrans.Format = DateTimePickerFormat.Short;
+            dateTrans.ImeMode = ImeMode.NoControl;
+            dateTrans.Location = new Point(118, 57);
+            dateTrans.Name = "dateTrans";
+            dateTrans.Size = new Size(174, 23);
+            dateTrans.TabIndex = 4;
+            dateTrans.ValueChanged += dateTimePicker_ValueChanged;
             // 
             // txtShiftNumber
             // 
@@ -136,7 +137,7 @@
             Controls.Add(btnLogin2);
             Controls.Add(txtChangeFunds);
             Controls.Add(txtShiftNumber);
-            Controls.Add(dateTimePicker);
+            Controls.Add(dateTrans);
             Controls.Add(labelWelcome);
             Controls.Add(label2);
             Controls.Add(label1);
@@ -154,7 +155,7 @@
         private Label label1;
         private Label label2;
         private Label labelWelcome;
-        private DateTimePicker dateTimePicker;
+        private DateTimePicker dateTrans;
         private TextBox txtShiftNumber;
         private TextBox txtChangeFunds;
         private Button btnLogin2;
