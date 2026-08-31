@@ -1,4 +1,5 @@
 EnchantedPOS 🛒✨
+
 A robust, fast-paced Point of Sale (POS) system built with C# and Windows Forms. Designed for high-volume retail environments and 24-hour continuous store operations, EnchantedPOS focuses on reliability, rapid checkout workflows, and seamless crash recovery.
 
 Key Features
