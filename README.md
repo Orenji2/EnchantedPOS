@@ -1,8 +1,8 @@
-EnchantedPOS 🛒✨
+**EnchantedPOS 🛒✨**
 
 A robust, fast-paced Point of Sale (POS) system built with C# and Windows Forms. Designed for high-volume retail environments and 24-hour continuous store operations, EnchantedPOS focuses on reliability, rapid checkout workflows, and seamless crash recovery.
 
-Key Features
+**Key Features**
 Real-Time Crash Recovery: Utilizes a TEMP_REGISTER database to save transactions per item scan. If a terminal loses power or reboots, the active transaction and its invoice number are automatically restored upon the cashier's next login.
 
 Multi-Station Architecture: Supports multiple checkout counters simultaneously without cross-talk by binding transactions to specific local station numbers.
@@ -17,14 +17,14 @@ Manager Overrides: Secure, password-protected intercept screens for sensitive ac
 
 Shift & Fund Tracking: Captures the active cashier ID, current shift number, and starting change funds right at login for accurate end-of-day auditing.
 
-Tech Stack
+**Tech Stack**
 Frontend: C# / .NET Windows Forms (WinForms)
 
 Database: Microsoft Access (.accdb) using ADO.NET (OleDbConnection)
 
 Architecture: Local client database integration with dynamic query generation and parameter binding.
 
-Setup Instructions
+**Setup Instructions**
 Clone this repository to your local machine.
 
 Ensure you have the Microsoft Access Database Engine (OLEDB 12.0) installed on your system.
