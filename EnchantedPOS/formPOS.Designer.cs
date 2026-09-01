@@ -43,6 +43,8 @@
             txtTotalAmnt = new TextBox();
             panelSales = new Panel();
             dataGridView1 = new DataGridView();
+            labelSales = new Label();
+            panelTotal = new Panel();
             barcode = new DataGridViewTextBoxColumn();
             prod_name = new DataGridViewTextBoxColumn();
             quantity = new DataGridViewTextBoxColumn();
@@ -50,8 +52,6 @@
             amnt = new DataGridViewTextBoxColumn();
             disc = new DataGridViewTextBoxColumn();
             regprice = new DataGridViewTextBoxColumn();
-            labelSales = new Label();
-            panelTotal = new Panel();
             panelBarcode.SuspendLayout();
             groupBox1.SuspendLayout();
             panelSales.SuspendLayout();
@@ -255,63 +255,6 @@
             dataGridView1.TabIndex = 0;
             dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
             // 
-            // barcode
-            // 
-            barcode.HeaderText = "Barcode";
-            barcode.MinimumWidth = 6;
-            barcode.Name = "barcode";
-            barcode.ReadOnly = true;
-            barcode.Width = 150;
-            // 
-            // prod_name
-            // 
-            prod_name.HeaderText = "Item Description";
-            prod_name.MinimumWidth = 6;
-            prod_name.Name = "prod_name";
-            prod_name.ReadOnly = true;
-            prod_name.Resizable = DataGridViewTriState.False;
-            prod_name.Width = 350;
-            // 
-            // quantity
-            // 
-            quantity.HeaderText = "QTY";
-            quantity.MinimumWidth = 6;
-            quantity.Name = "quantity";
-            quantity.ReadOnly = true;
-            quantity.Width = 50;
-            // 
-            // price
-            // 
-            price.HeaderText = "SRP";
-            price.MinimumWidth = 6;
-            price.Name = "price";
-            price.ReadOnly = true;
-            price.Width = 50;
-            // 
-            // amnt
-            // 
-            amnt.HeaderText = "Amount";
-            amnt.MinimumWidth = 6;
-            amnt.Name = "amnt";
-            amnt.ReadOnly = true;
-            amnt.Width = 50;
-            // 
-            // disc
-            // 
-            disc.HeaderText = "Disc %";
-            disc.MinimumWidth = 6;
-            disc.Name = "disc";
-            disc.ReadOnly = true;
-            disc.Width = 50;
-            // 
-            // regprice
-            // 
-            regprice.HeaderText = "Reg. SRP";
-            regprice.MinimumWidth = 6;
-            regprice.Name = "regprice";
-            regprice.ReadOnly = true;
-            regprice.Width = 50;
-            // 
             // labelSales
             // 
             labelSales.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -334,6 +277,68 @@
             panelTotal.Name = "panelTotal";
             panelTotal.Size = new Size(933, 187);
             panelTotal.TabIndex = 7;
+            // 
+            // barcode
+            // 
+            barcode.HeaderText = "Barcode";
+            barcode.MinimumWidth = 6;
+            barcode.Name = "barcode";
+            barcode.ReadOnly = true;
+            barcode.Width = 150;
+            // 
+            // prod_name
+            // 
+            prod_name.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            prod_name.HeaderText = "Item Description";
+            prod_name.MinimumWidth = 6;
+            prod_name.Name = "prod_name";
+            prod_name.ReadOnly = true;
+            prod_name.Resizable = DataGridViewTriState.False;
+            // 
+            // quantity
+            // 
+            quantity.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            quantity.HeaderText = "QTY";
+            quantity.MinimumWidth = 6;
+            quantity.Name = "quantity";
+            quantity.ReadOnly = true;
+            quantity.Width = 64;
+            // 
+            // price
+            // 
+            price.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            price.HeaderText = "SRP";
+            price.MinimumWidth = 6;
+            price.Name = "price";
+            price.ReadOnly = true;
+            price.Width = 63;
+            // 
+            // amnt
+            // 
+            amnt.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            amnt.HeaderText = "Amount";
+            amnt.MinimumWidth = 6;
+            amnt.Name = "amnt";
+            amnt.ReadOnly = true;
+            amnt.Width = 91;
+            // 
+            // disc
+            // 
+            disc.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            disc.HeaderText = "Disc %";
+            disc.MinimumWidth = 6;
+            disc.Name = "disc";
+            disc.ReadOnly = true;
+            disc.Width = 82;
+            // 
+            // regprice
+            // 
+            regprice.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            regprice.HeaderText = "Reg. SRP";
+            regprice.MinimumWidth = 6;
+            regprice.Name = "regprice";
+            regprice.ReadOnly = true;
+            regprice.Width = 96;
             // 
             // formPOS
             // 
@@ -375,6 +380,10 @@
         private Panel panelSales;
         private Label labelSales;
         private DataGridView dataGridView1;
+        private Label labelBarcode;
+        private Button btnRecall;
+        private Button btnSuspend;
+        private Panel panelTotal;
         private DataGridViewTextBoxColumn barcode;
         private DataGridViewTextBoxColumn prod_name;
         private DataGridViewTextBoxColumn quantity;
@@ -382,9 +391,5 @@
         private DataGridViewTextBoxColumn amnt;
         private DataGridViewTextBoxColumn disc;
         private DataGridViewTextBoxColumn regprice;
-        private Label labelBarcode;
-        private Button btnRecall;
-        private Button btnSuspend;
-        private Panel panelTotal;
     }
 }

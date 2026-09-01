@@ -38,11 +38,11 @@ namespace EnchantedPOS
         }
 
         // Real-time save method
-        private void SaveToTempRegister(string barcode, string engName, decimal qty, decimal uPrice, decimal totalAmnt)
+        private void SaveToTempRegister(string barcode, string engName, string korName, decimal qty, decimal uPrice, decimal totalAmnt)
         {
             string query = @"INSERT INTO TEMP_REGISTER
-            (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
             {
@@ -55,6 +55,7 @@ namespace EnchantedPOS
                     cmd.Parameters.AddWithValue("?", currentChangeFunds);
                     cmd.Parameters.AddWithValue("?", barcode);
                     cmd.Parameters.AddWithValue("?", engName);
+                    cmd.Parameters.AddWithValue("?", korName);
                     cmd.Parameters.AddWithValue("?", qty);
                     cmd.Parameters.AddWithValue("?", uPrice);
                     cmd.Parameters.AddWithValue("?", totalAmnt);
@@ -199,7 +200,7 @@ namespace EnchantedPOS
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.ReadOnly = true;
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            // dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
         }
 
@@ -313,6 +314,64 @@ namespace EnchantedPOS
                 e.SuppressKeyPress = true;
             }
 
+            if (e.KeyCode == Keys.Delete)
+            {
+                if (dataGridView1.ReadOnly == false && dataGridView1.CurrentRow != null)
+                {
+                    // Grab the barcode and the item they want to delete
+                    string selectedBarcode = dataGridView1.CurrentRow.Cells[0].Value.ToString();
+                    string selectedName = dataGridView1.CurrentRow.Cells[1].Value.ToString();
+
+                    DialogResult confirmDelete = MessageBox.Show(
+                        $"Are you sure you want to remove '{selectedName}' from this Transaction?",
+                        "Remove Item",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+
+                    if (confirmDelete == DialogResult.Yes)
+                    {
+                        // Delete the item from the Temporary Database First
+                        string query = "DELETE FROM TEMP_REGISTER WHERE STATION_NUM = ? AND INVOICE = ? AND BAR_CODE = ?";
+
+                        using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+                        {
+                            using (OleDbCommand cmd = new OleDbCommand(query, con))
+                            {
+                                cmd.Parameters.AddWithValue("?", currentStation);
+                                cmd.Parameters.AddWithValue("?", currentInvoiceNumber);
+                                cmd.Parameters.AddWithValue("?", selectedBarcode);
+
+                                try
+                                {
+                                    con.Open();
+                                    cmd.ExecuteNonQuery();
+                                }
+                                catch (Exception ex)
+                                {
+                                    MessageBox.Show("Error Removing item from Database: " + ex.Message);
+                                    return;
+                                }
+                            }
+                        }
+
+                        // Remove it from dataGrid
+                        for (int i = dataGridView1.Rows.Count - 1; i >=0; i--)
+                        {
+                            if (dataGridView1.Rows[i].Cells[0].Value.ToString() == selectedBarcode)
+                            {
+                                dataGridView1.Rows.RemoveAt(i);
+                            }
+                        }
+
+                        UpdateTotalAmount();
+                        txtBarcode.Focus();
+                    }
+
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                }
+            }
+
             if (e.KeyCode == Keys.F1)
             {
                 // Lock the DataGrid 
@@ -370,7 +429,7 @@ namespace EnchantedPOS
 
             //Add the item item in the DataGrid, query the database
 
-            string query = "SELECT ENG_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C FROM PRODMAST WHERE BARCODE = ?";
+            string query = "SELECT ENG_NAME, KOR_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C FROM PRODMAST WHERE BARCODE = ?";
 
             using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
             {
@@ -387,7 +446,10 @@ namespace EnchantedPOS
                             {
 
                                 string prod_name = reader["ENG_NAME"].ToString();
-                                // decimal uPrice = Convert.ToDecimal(reader["R_PRICE"]);
+                                string kor_name = reader["KOR_NAME"].ToString();
+                                string displayName = string.IsNullOrWhiteSpace(kor_name)
+                                    ? prod_name
+                                    : $"{prod_name} / {kor_name}";
                                 decimal uPrice = 0m;
 
                                 if(currentDiscountType == "Regular")
@@ -417,7 +479,7 @@ namespace EnchantedPOS
                                 //Add the Item to the Data Grid
                                 dataGridView1.Rows.Add(
                                     Barcode,
-                                    prod_name,
+                                    displayName,
                                     qtyToAdd,
                                     effectiveSrp.ToString("F2"),
                                     amount.ToString("F2"),
@@ -430,7 +492,7 @@ namespace EnchantedPOS
                                 txtUnitPrice.Text = effectiveSrp.ToString("F2");
                                 txtPrice.Text = amount.ToString("F2");
 
-                                SaveToTempRegister(Barcode, prod_name, qtyToAdd, effectiveSrp, amount);
+                                SaveToTempRegister(Barcode, prod_name, kor_name, qtyToAdd, effectiveSrp, amount);
 
                                 UpdateTotalAmount();
                             }
@@ -484,7 +546,7 @@ namespace EnchantedPOS
                 MessageBox.Show("Failed to parse weight from Barcode", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
-            string query= "SELECT ENG_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C FROM PRODMAST WHERE BARCODE = ?";
+            string query= "SELECT ENG_NAME, KOR_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C FROM PRODMAST WHERE BARCODE = ?";
 
             using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
             {
@@ -500,6 +562,10 @@ namespace EnchantedPOS
                             if (reader.Read())
                             {
                                 string prod_name = reader["ENG_NAME"].ToString();
+                                string kor_name = reader["KOR_NAME"].ToString();
+                                string displayName = string.IsNullOrWhiteSpace(kor_name)
+                                    ? prod_name
+                                    : $"{prod_name} / {kor_name}";
                                 decimal uPrice = 0m;
 
                                 // Check Tiered pricing
@@ -517,7 +583,7 @@ namespace EnchantedPOS
                                 // ADD TO THE DATAGRID
                                 dataGridView1.Rows.Add(
                                     actualBarcode,
-                                    prod_name + " (" + weightInKg.ToString("F3") + " kg )",
+                                    displayName  + " (" + weightInKg.ToString("F3") + " kg )",
                                     weightInKg.ToString("F3"),
                                     effectiveSrp.ToString("F2"),
                                     amount.ToString("F2"),
@@ -526,7 +592,7 @@ namespace EnchantedPOS
                                 );
 
                                 //Save to temp Register
-                                SaveToTempRegister(actualBarcode, prod_name, weightInKg, effectiveSrp, amount);
+                                SaveToTempRegister(actualBarcode, prod_name, kor_name, weightInKg, effectiveSrp, amount);
                                 UpdateTotalAmount();
                             }
                             else
@@ -545,7 +611,7 @@ namespace EnchantedPOS
 
         private void LoadRecoveredTransactions()
         {
-            string query = @"SELECT INVOICE, BAR_CODE, ENG_NAME, QTY, U_PRICE, TOTAL_AMNT
+            string query = @"SELECT INVOICE, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT
                             FROM TEMP_REGISTER
                             WHERE STATION_NUM = ?";
 
@@ -570,14 +636,19 @@ namespace EnchantedPOS
                                 currentInvoiceNumber = Convert.ToInt32(reader["INVOICE"]);
 
                                 string barcode = reader["BAR_CODE"].ToString();
-                                string name = reader["ENG_NAME"].ToString();
+                                string engName = reader["ENG_NAME"].ToString();
+                                string korName = reader["KOR_NAME"].ToString();
                                 decimal qty = Convert.ToDecimal(reader["QTY"]);
                                 decimal uPrice = Convert.ToDecimal(reader["U_PRICE"]);
                                 decimal amount = Convert.ToDecimal(reader["TOTAL_AMNT"]);
 
+                                string displayName = string.IsNullOrWhiteSpace(korName)
+                                    ? engName
+                                    : $"{engName} / {korName}";
+
                                 dataGridView1.Rows.Add(
                                     barcode,
-                                    name,
+                                    displayName,
                                     qty,
                                     uPrice.ToString("F2"),
                                     amount.ToString("F2"),
