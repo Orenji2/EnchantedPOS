@@ -32,6 +32,9 @@ namespace EnchantedPOS
             currentTransDate = date;
             currentStation = station;
 
+            // Setting the minimum window size
+            this.MinimumSize = new Size(1024, 768);
+
         }
 
         // Real-time save method
@@ -48,7 +51,7 @@ namespace EnchantedPOS
                     cmd.Parameters.AddWithValue("?", currentInvoiceNumber);
                     cmd.Parameters.AddWithValue("?", currentCashierId);
                     cmd.Parameters.AddWithValue("?", currentShift);
-                    cmd.Parameters.AddWithValue("?", currentTransDate.ToString("yyyy-MM-dd"));
+                    cmd.Parameters.AddWithValue("?", currentTransDate.Date);
                     cmd.Parameters.AddWithValue("?", currentChangeFunds);
                     cmd.Parameters.AddWithValue("?", barcode);
                     cmd.Parameters.AddWithValue("?", engName);
@@ -196,6 +199,7 @@ namespace EnchantedPOS
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.ReadOnly = true;
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
         }
 
@@ -245,7 +249,7 @@ namespace EnchantedPOS
                 e.SuppressKeyPress = true;
             }
 
-            // Press F2 to Edit or Void
+            // Press F3 to Edit or Void
             if (e.KeyCode == Keys.F3)
             {
                 //Requires  password first
@@ -265,10 +269,26 @@ namespace EnchantedPOS
 
                 if (result == DialogResult.No) //void 
                 {
-                    dataGridView1.Rows.Clear();
-                    UpdateTotalAmount();
-                    ClearTempRegister();
-                    txtBarcode.Focus();
+
+                    DialogResult confirmVoid = MessageBox.Show(
+                        "Are you sure you want to VOID this transaction? This action cannot be undone.",
+                        "Confirm Void",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+
+                    if (confirmVoid == DialogResult.Yes)
+                    {
+                        dataGridView1.Rows.Clear();
+                        UpdateTotalAmount();
+                        ClearTempRegister();
+                        txtBarcode.Focus();
+                    }
+                    else
+                    {
+                        txtBarcode.Focus();
+                    }
+
+                    
                 }
                 else if (result == DialogResult.Yes)  //Edit
                 {
@@ -337,7 +357,7 @@ namespace EnchantedPOS
             }
 
             //Display it in the TextBox
-            txtTotalAmnt.Text = totalAmount.ToString("F2");
+            txtTotalAmnt.Text = totalAmount.ToString("N2");
         }
 
         private void processItem(string Barcode)
@@ -417,6 +437,101 @@ namespace EnchantedPOS
                             else
                             {
                                 MessageBox.Show("Item not found.", "Unknown Barcode", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Database Error: " + ex.Message, "Error");
+                    }
+                }
+            }
+        }
+
+        private void processWeightedItem(string scaleBarcode)
+        {
+            string actualBarcode = "";
+            decimal weightInKg = 0m;
+
+            try
+            {
+                // 14 digit bacode
+                if (scaleBarcode.Length == 14)
+                {
+                    actualBarcode = scaleBarcode.Substring(3, 4); // Grabs the base barcode
+                    string weightGramsStr = scaleBarcode.Substring(8, 5); // Grabs the weight
+
+                    decimal.TryParse(weightGramsStr, out decimal weigthGrams);
+                    weightInKg = weigthGrams / 1000m; // Converts the grams to kg
+                }
+                // For 13 digit barcodes
+                else if (scaleBarcode.Length == 13)
+                {
+                    actualBarcode = scaleBarcode.Substring(2, 4); // Grabs the base barcode
+                    string weightGramsStr = scaleBarcode.Substring(7, 5); // Grabs the weight
+
+                    decimal.TryParse(weightGramsStr, out decimal weightGrams); //Convert the String to decimal
+                    weightInKg = weightGrams / 1000m; 
+                }
+                else
+                {
+                    MessageBox.Show("Unknown Scale Barcode Format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to parse weight from Barcode", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
+            string query= "SELECT ENG_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C FROM PRODMAST WHERE BARCODE = ?";
+
+            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            {
+                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("?", actualBarcode);
+
+                    try
+                    {
+                        con.Open();
+                        using (OleDbDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string prod_name = reader["ENG_NAME"].ToString();
+                                decimal uPrice = 0m;
+
+                                // Check Tiered pricing
+                                if (currentDiscountType == "Regular") { uPrice = Convert.ToDecimal(reader["R_PRICE"]); }
+                                else if (currentDiscountType == "Wholesale") { uPrice = Convert.ToDecimal(reader["D_PRICE_A"]); }
+                                else if (currentDiscountType == "VIP") { uPrice = Convert.ToDecimal(reader["D_PRICE_B"]); }
+                                else if (currentDiscountType == "Royal") { uPrice = Convert.ToDecimal(reader["D_PRICE_C"]); }
+
+                                decimal discountPercent = 0m;
+                                decimal effectiveSrp = uPrice - (uPrice * (discountPercent / 100));
+
+                                // MULTIPLY  PRICE PER KG BY THE WEIGHT
+                                decimal amount = Math.Round(weightInKg * effectiveSrp, MidpointRounding.AwayFromZero);
+
+                                // ADD TO THE DATAGRID
+                                dataGridView1.Rows.Add(
+                                    actualBarcode,
+                                    prod_name + " (" + weightInKg.ToString("F3") + " kg )",
+                                    weightInKg.ToString("F3"),
+                                    effectiveSrp.ToString("F2"),
+                                    amount.ToString("F2"),
+                                    discountPercent.ToString() + "%",
+                                    uPrice.ToString("F2")
+                                );
+
+                                //Save to temp Register
+                                SaveToTempRegister(actualBarcode, prod_name, weightInKg, effectiveSrp, amount);
+                                UpdateTotalAmount();
+                            }
+                            else
+                            {
+                                MessageBox.Show("Weighed item not found in the database.", "Uknown Barcode", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             }
                         }
                     }
@@ -527,8 +642,18 @@ namespace EnchantedPOS
                 }
                 else
                 {
-                    //Normal Item Scan
-                    processItem(scannedBarcode);
+                    if (scannedBarcode.StartsWith("20") && scannedBarcode.Length >= 13)
+                    {
+                        //Weighted Item Scan
+                        processWeightedItem(scannedBarcode);
+                    }
+                    else
+                    {
+                        //Normal Item Scan
+                        processItem(scannedBarcode);
+                    }
+
+
                 }
 
                 //Resets the field after scanning

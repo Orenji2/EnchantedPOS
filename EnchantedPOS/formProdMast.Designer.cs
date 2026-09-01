@@ -48,22 +48,26 @@
             // 
             // lblBrowseProd
             // 
+            lblBrowseProd.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             lblBrowseProd.AutoSize = true;
             lblBrowseProd.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            lblBrowseProd.Location = new Point(277, 9);
+            lblBrowseProd.Location = new Point(317, 12);
             lblBrowseProd.Name = "lblBrowseProd";
-            lblBrowseProd.Size = new Size(154, 25);
+            lblBrowseProd.Size = new Size(195, 32);
             lblBrowseProd.TabIndex = 0;
             lblBrowseProd.Text = "Browse Product";
             // 
             // groupSearchCriteria
             // 
+            groupSearchCriteria.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             groupSearchCriteria.Controls.Add(radioKorProdName);
             groupSearchCriteria.Controls.Add(radioEngProdName);
             groupSearchCriteria.Controls.Add(radioBarcode);
-            groupSearchCriteria.Location = new Point(19, 37);
+            groupSearchCriteria.Location = new Point(22, 49);
+            groupSearchCriteria.Margin = new Padding(3, 4, 3, 4);
             groupSearchCriteria.Name = "groupSearchCriteria";
-            groupSearchCriteria.Size = new Size(569, 48);
+            groupSearchCriteria.Padding = new Padding(3, 4, 3, 4);
+            groupSearchCriteria.Size = new Size(650, 64);
             groupSearchCriteria.TabIndex = 1;
             groupSearchCriteria.TabStop = false;
             groupSearchCriteria.Text = "Search Criteria";
@@ -71,9 +75,10 @@
             // radioKorProdName
             // 
             radioKorProdName.AutoSize = true;
-            radioKorProdName.Location = new Point(297, 22);
+            radioKorProdName.Location = new Point(339, 29);
+            radioKorProdName.Margin = new Padding(3, 4, 3, 4);
             radioKorProdName.Name = "radioKorProdName";
-            radioKorProdName.Size = new Size(142, 19);
+            radioKorProdName.Size = new Size(176, 24);
             radioKorProdName.TabIndex = 2;
             radioKorProdName.TabStop = true;
             radioKorProdName.Text = "Product Name Korean";
@@ -82,9 +87,10 @@
             // radioEngProdName
             // 
             radioEngProdName.AutoSize = true;
-            radioEngProdName.Location = new Point(129, 22);
+            radioEngProdName.Location = new Point(147, 29);
+            radioEngProdName.Margin = new Padding(3, 4, 3, 4);
             radioEngProdName.Name = "radioEngProdName";
-            radioEngProdName.Size = new Size(143, 19);
+            radioEngProdName.Size = new Size(176, 24);
             radioEngProdName.TabIndex = 1;
             radioEngProdName.TabStop = true;
             radioEngProdName.Text = "Product Name English";
@@ -93,9 +99,10 @@
             // radioBarcode
             // 
             radioBarcode.AutoSize = true;
-            radioBarcode.Location = new Point(15, 22);
+            radioBarcode.Location = new Point(17, 29);
+            radioBarcode.Margin = new Padding(3, 4, 3, 4);
             radioBarcode.Name = "radioBarcode";
-            radioBarcode.Size = new Size(73, 19);
+            radioBarcode.Size = new Size(91, 24);
             radioBarcode.TabIndex = 0;
             radioBarcode.TabStop = true;
             radioBarcode.Text = "Bar Code";
@@ -103,9 +110,11 @@
             // 
             // btnOk
             // 
-            btnOk.Location = new Point(594, 46);
+            btnOk.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnOk.Location = new Point(679, 61);
+            btnOk.Margin = new Padding(3, 4, 3, 4);
             btnOk.Name = "btnOk";
-            btnOk.Size = new Size(94, 39);
+            btnOk.Size = new Size(107, 52);
             btnOk.TabIndex = 2;
             btnOk.Text = "OK";
             btnOk.UseVisualStyleBackColor = true;
@@ -113,9 +122,11 @@
             // 
             // btnCancel
             // 
-            btnCancel.Location = new Point(694, 46);
+            btnCancel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnCancel.Location = new Point(793, 61);
+            btnCancel.Margin = new Padding(3, 4, 3, 4);
             btnCancel.Name = "btnCancel";
-            btnCancel.Size = new Size(94, 39);
+            btnCancel.Size = new Size(107, 52);
             btnCancel.TabIndex = 3;
             btnCancel.Text = "Cancel";
             btnCancel.UseVisualStyleBackColor = true;
@@ -123,29 +134,36 @@
             // 
             // labelSearch
             // 
+            labelSearch.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             labelSearch.AutoSize = true;
-            labelSearch.Location = new Point(26, 103);
+            labelSearch.Location = new Point(30, 137);
             labelSearch.Name = "labelSearch";
-            labelSearch.Size = new Size(69, 15);
+            labelSearch.Size = new Size(87, 20);
             labelSearch.TabIndex = 4;
             labelSearch.Text = "Search Item";
             // 
             // txtSearch
             // 
-            txtSearch.Location = new Point(23, 121);
+            txtSearch.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            txtSearch.Location = new Point(26, 161);
+            txtSearch.Margin = new Padding(3, 4, 3, 4);
             txtSearch.Name = "txtSearch";
-            txtSearch.Size = new Size(565, 23);
+            txtSearch.Size = new Size(645, 27);
             txtSearch.TabIndex = 5;
             txtSearch.TextChanged += txtSearch_TextChanged;
             // 
             // dgvProdList
             // 
+            dgvProdList.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dgvProdList.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvProdList.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvProdList.Columns.AddRange(new DataGridViewColumn[] { colProdDesc, colPrice, colPriceBox, colBarcode });
-            dgvProdList.Location = new Point(26, 157);
+            dgvProdList.Location = new Point(30, 209);
+            dgvProdList.Margin = new Padding(3, 4, 3, 4);
             dgvProdList.Name = "dgvProdList";
             dgvProdList.ReadOnly = true;
-            dgvProdList.Size = new Size(763, 440);
+            dgvProdList.RowHeadersWidth = 51;
+            dgvProdList.Size = new Size(872, 587);
             dgvProdList.TabIndex = 6;
             dgvProdList.CellDoubleClick += dgvProdList_CellDoubleClick;
             dgvProdList.KeyDown += dgvProdList_KeyDown;
@@ -153,36 +171,38 @@
             // colProdDesc
             // 
             colProdDesc.HeaderText = "Product Description";
+            colProdDesc.MinimumWidth = 6;
             colProdDesc.Name = "colProdDesc";
             colProdDesc.ReadOnly = true;
-            colProdDesc.Width = 320;
             // 
             // colPrice
             // 
             colPrice.HeaderText = "Price per PCS";
+            colPrice.MinimumWidth = 6;
             colPrice.Name = "colPrice";
             colPrice.ReadOnly = true;
             // 
             // colPriceBox
             // 
             colPriceBox.HeaderText = "Price Per Box";
+            colPriceBox.MinimumWidth = 6;
             colPriceBox.Name = "colPriceBox";
             colPriceBox.ReadOnly = true;
             // 
             // colBarcode
             // 
             colBarcode.HeaderText = "Barcode";
+            colBarcode.MinimumWidth = 6;
             colBarcode.Name = "colBarcode";
             colBarcode.ReadOnly = true;
-            colBarcode.Width = 200;
             // 
             // formProdBrowse
             // 
             AcceptButton = btnOk;
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             CancelButton = btnCancel;
-            ClientSize = new Size(801, 608);
+            ClientSize = new Size(915, 811);
             Controls.Add(dgvProdList);
             Controls.Add(txtSearch);
             Controls.Add(labelSearch);
@@ -190,6 +210,7 @@
             Controls.Add(btnOk);
             Controls.Add(groupSearchCriteria);
             Controls.Add(lblBrowseProd);
+            Margin = new Padding(3, 4, 3, 4);
             Name = "formProdBrowse";
             Text = "Browse Product";
             Load += formProdBrowse_Load;

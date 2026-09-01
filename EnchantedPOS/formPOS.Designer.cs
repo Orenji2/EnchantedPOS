@@ -30,6 +30,7 @@
         {
             panelBarcode = new Panel();
             btnRecall = new Button();
+            pnlBottom = new Panel();
             btnSuspend = new Button();
             groupBox1 = new GroupBox();
             labelBarcode = new Label();
@@ -39,11 +40,8 @@
             txtBarcode = new TextBox();
             btnReprint = new Button();
             txtPrice = new TextBox();
-            pnlBottom = new Panel();
             txtTotalAmnt = new TextBox();
-            panel1 = new Panel();
-            labelSales = new Label();
-            panel2 = new Panel();
+            panelSales = new Panel();
             dataGridView1 = new DataGridView();
             barcode = new DataGridViewTextBoxColumn();
             prod_name = new DataGridViewTextBoxColumn();
@@ -52,70 +50,89 @@
             amnt = new DataGridViewTextBoxColumn();
             disc = new DataGridViewTextBoxColumn();
             regprice = new DataGridViewTextBoxColumn();
+            labelSales = new Label();
+            panelTotal = new Panel();
             panelBarcode.SuspendLayout();
             groupBox1.SuspendLayout();
-            panel1.SuspendLayout();
-            panel2.SuspendLayout();
+            panelSales.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
+            panelTotal.SuspendLayout();
             SuspendLayout();
             // 
             // panelBarcode
             // 
-            panelBarcode.BackColor = SystemColors.ActiveCaption;
+            panelBarcode.BackColor = Color.FromArgb(64, 64, 64);
             panelBarcode.Controls.Add(btnRecall);
+            panelBarcode.Controls.Add(pnlBottom);
             panelBarcode.Controls.Add(btnSuspend);
             panelBarcode.Controls.Add(groupBox1);
             panelBarcode.Controls.Add(btnReprint);
             panelBarcode.Controls.Add(txtPrice);
-            panelBarcode.Location = new Point(819, -1);
+            panelBarcode.Dock = DockStyle.Right;
+            panelBarcode.Location = new Point(933, 0);
+            panelBarcode.Margin = new Padding(3, 4, 3, 4);
             panelBarcode.Name = "panelBarcode";
-            panelBarcode.Size = new Size(308, 348);
+            panelBarcode.Size = new Size(352, 861);
             panelBarcode.TabIndex = 0;
             // 
             // btnRecall
             // 
-            btnRecall.BackColor = Color.Green;
+            btnRecall.BackColor = Color.Teal;
             btnRecall.FlatStyle = FlatStyle.Flat;
             btnRecall.ForeColor = SystemColors.ControlLightLight;
-            btnRecall.Location = new Point(204, 253);
+            btnRecall.Location = new Point(233, 337);
+            btnRecall.Margin = new Padding(3, 4, 3, 4);
             btnRecall.Name = "btnRecall";
-            btnRecall.Size = new Size(76, 70);
+            btnRecall.Size = new Size(87, 93);
             btnRecall.TabIndex = 6;
             btnRecall.Text = "RECALL";
             btnRecall.UseVisualStyleBackColor = false;
             // 
+            // pnlBottom
+            // 
+            pnlBottom.BackColor = Color.Teal;
+            pnlBottom.Location = new Point(3, 452);
+            pnlBottom.Margin = new Padding(3, 4, 3, 4);
+            pnlBottom.Name = "pnlBottom";
+            pnlBottom.Size = new Size(354, 409);
+            pnlBottom.TabIndex = 5;
+            // 
             // btnSuspend
             // 
-            btnSuspend.BackColor = Color.Green;
+            btnSuspend.BackColor = Color.Teal;
             btnSuspend.FlatStyle = FlatStyle.Flat;
             btnSuspend.ForeColor = SystemColors.ControlLightLight;
-            btnSuspend.Location = new Point(112, 253);
+            btnSuspend.Location = new Point(128, 337);
+            btnSuspend.Margin = new Padding(3, 4, 3, 4);
             btnSuspend.Name = "btnSuspend";
-            btnSuspend.Size = new Size(86, 70);
+            btnSuspend.Size = new Size(98, 93);
             btnSuspend.TabIndex = 5;
             btnSuspend.Text = "SUSPEND";
             btnSuspend.UseVisualStyleBackColor = false;
             // 
             // groupBox1
             // 
-            groupBox1.BackColor = SystemColors.ActiveCaption;
+            groupBox1.BackColor = Color.FromArgb(64, 64, 64);
             groupBox1.Controls.Add(labelBarcode);
             groupBox1.Controls.Add(txtProdName);
             groupBox1.Controls.Add(txtQty);
             groupBox1.Controls.Add(txtUnitPrice);
             groupBox1.Controls.Add(txtBarcode);
-            groupBox1.Location = new Point(3, 61);
+            groupBox1.Location = new Point(3, 81);
+            groupBox1.Margin = new Padding(3, 4, 3, 4);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(347, 153);
+            groupBox1.Padding = new Padding(3, 4, 3, 4);
+            groupBox1.Size = new Size(397, 204);
             groupBox1.TabIndex = 4;
             groupBox1.TabStop = false;
             // 
             // labelBarcode
             // 
             labelBarcode.AutoSize = true;
-            labelBarcode.Location = new Point(6, 15);
+            labelBarcode.ForeColor = SystemColors.ControlLight;
+            labelBarcode.Location = new Point(7, 20);
             labelBarcode.Name = "labelBarcode";
-            labelBarcode.Size = new Size(50, 15);
+            labelBarcode.Size = new Size(64, 20);
             labelBarcode.TabIndex = 4;
             labelBarcode.Text = "Barcode";
             // 
@@ -123,11 +140,12 @@
             // 
             txtProdName.Enabled = false;
             txtProdName.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            txtProdName.Location = new Point(6, 99);
+            txtProdName.Location = new Point(7, 132);
+            txtProdName.Margin = new Padding(3, 4, 3, 4);
             txtProdName.Multiline = true;
             txtProdName.Name = "txtProdName";
             txtProdName.ReadOnly = true;
-            txtProdName.Size = new Size(282, 54);
+            txtProdName.Size = new Size(322, 71);
             txtProdName.TabIndex = 3;
             // 
             // txtQty
@@ -135,9 +153,10 @@
             txtQty.BorderStyle = BorderStyle.None;
             txtQty.Enabled = false;
             txtQty.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            txtQty.Location = new Point(239, 44);
+            txtQty.Location = new Point(273, 59);
+            txtQty.Margin = new Padding(3, 4, 3, 4);
             txtQty.Name = "txtQty";
-            txtQty.Size = new Size(43, 26);
+            txtQty.Size = new Size(49, 32);
             txtQty.TabIndex = 2;
             txtQty.Text = "1";
             txtQty.KeyDown += txtQty_KeyDown;
@@ -147,30 +166,33 @@
             txtUnitPrice.BorderStyle = BorderStyle.None;
             txtUnitPrice.Enabled = false;
             txtUnitPrice.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            txtUnitPrice.Location = new Point(167, 44);
+            txtUnitPrice.Location = new Point(191, 59);
+            txtUnitPrice.Margin = new Padding(3, 4, 3, 4);
             txtUnitPrice.Name = "txtUnitPrice";
             txtUnitPrice.ReadOnly = true;
-            txtUnitPrice.Size = new Size(66, 26);
+            txtUnitPrice.Size = new Size(75, 32);
             txtUnitPrice.TabIndex = 1;
             // 
             // txtBarcode
             // 
             txtBarcode.BorderStyle = BorderStyle.None;
             txtBarcode.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            txtBarcode.Location = new Point(6, 44);
+            txtBarcode.Location = new Point(7, 59);
+            txtBarcode.Margin = new Padding(3, 4, 3, 4);
             txtBarcode.Name = "txtBarcode";
-            txtBarcode.Size = new Size(155, 26);
+            txtBarcode.Size = new Size(177, 32);
             txtBarcode.TabIndex = 0;
             txtBarcode.KeyDown += txtBarcode_KeyDown;
             // 
             // btnReprint
             // 
-            btnReprint.BackColor = Color.Green;
+            btnReprint.BackColor = Color.Teal;
             btnReprint.FlatStyle = FlatStyle.Flat;
             btnReprint.ForeColor = SystemColors.ControlLightLight;
-            btnReprint.Location = new Point(20, 253);
+            btnReprint.Location = new Point(23, 337);
+            btnReprint.Margin = new Padding(3, 4, 3, 4);
             btnReprint.Name = "btnReprint";
-            btnReprint.Size = new Size(86, 70);
+            btnReprint.Size = new Size(98, 93);
             btnReprint.TabIndex = 1;
             btnReprint.Text = "REPRINT";
             btnReprint.UseVisualStyleBackColor = false;
@@ -180,79 +202,63 @@
             // 
             txtPrice.Enabled = false;
             txtPrice.Font = new Font("Segoe UI", 21.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            txtPrice.Location = new Point(9, 13);
+            txtPrice.Location = new Point(10, 17);
+            txtPrice.Margin = new Padding(3, 4, 3, 4);
             txtPrice.Name = "txtPrice";
             txtPrice.ReadOnly = true;
-            txtPrice.Size = new Size(282, 46);
+            txtPrice.Size = new Size(322, 56);
             txtPrice.TabIndex = 0;
-            // 
-            // pnlBottom
-            // 
-            pnlBottom.BackColor = Color.ForestGreen;
-            pnlBottom.Location = new Point(818, 347);
-            pnlBottom.Name = "pnlBottom";
-            pnlBottom.Size = new Size(306, 307);
-            pnlBottom.TabIndex = 5;
             // 
             // txtTotalAmnt
             // 
-            txtTotalAmnt.BackColor = Color.ForestGreen;
+            txtTotalAmnt.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            txtTotalAmnt.BackColor = Color.FromArgb(0, 64, 64);
             txtTotalAmnt.BorderStyle = BorderStyle.FixedSingle;
             txtTotalAmnt.Font = new Font("Segoe UI", 60F, FontStyle.Bold);
             txtTotalAmnt.ForeColor = SystemColors.Window;
-            txtTotalAmnt.Location = new Point(0, -1);
+            txtTotalAmnt.Location = new Point(-3, 0);
+            txtTotalAmnt.Margin = new Padding(3, 4, 3, 4);
             txtTotalAmnt.Name = "txtTotalAmnt";
             txtTotalAmnt.ReadOnly = true;
-            txtTotalAmnt.Size = new Size(820, 114);
+            txtTotalAmnt.Size = new Size(940, 141);
             txtTotalAmnt.TabIndex = 6;
             txtTotalAmnt.Text = "0.00";
             // 
-            // panel1
+            // panelSales
             // 
-            panel1.BackColor = Color.OrangeRed;
-            panel1.Controls.Add(labelSales);
-            panel1.Controls.Add(panel2);
-            panel1.Location = new Point(-6, 113);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(825, 532);
-            panel1.TabIndex = 7;
-            // 
-            // labelSales
-            // 
-            labelSales.AutoSize = true;
-            labelSales.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            labelSales.ForeColor = SystemColors.ControlLight;
-            labelSales.Location = new Point(387, 13);
-            labelSales.Name = "labelSales";
-            labelSales.Size = new Size(94, 21);
-            labelSales.TabIndex = 1;
-            labelSales.Text = "Sales Entry";
-            // 
-            // panel2
-            // 
-            panel2.BackColor = Color.Snow;
-            panel2.Controls.Add(dataGridView1);
-            panel2.Location = new Point(8, 46);
-            panel2.Name = "panel2";
-            panel2.Size = new Size(820, 485);
-            panel2.TabIndex = 0;
+            panelSales.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            panelSales.BackColor = Color.Teal;
+            panelSales.Controls.Add(dataGridView1);
+            panelSales.Location = new Point(0, 189);
+            panelSales.Margin = new Padding(3, 4, 3, 4);
+            panelSales.Name = "panelSales";
+            panelSales.Size = new Size(933, 672);
+            panelSales.TabIndex = 7;
             // 
             // dataGridView1
             // 
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.AllowUserToDeleteRows = false;
+            dataGridView1.BackgroundColor = Color.FromArgb(224, 224, 224);
+            dataGridView1.BorderStyle = BorderStyle.None;
+            dataGridView1.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dataGridView1.Columns.AddRange(new DataGridViewColumn[] { barcode, prod_name, quantity, price, amnt, disc, regprice });
-            dataGridView1.Location = new Point(-2, 2);
+            dataGridView1.Dock = DockStyle.Fill;
+            dataGridView1.GridColor = SystemColors.Menu;
+            dataGridView1.Location = new Point(0, 0);
+            dataGridView1.Margin = new Padding(3, 4, 3, 4);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.ReadOnly = true;
-            dataGridView1.Size = new Size(817, 481);
+            dataGridView1.RowHeadersWidth = 51;
+            dataGridView1.Size = new Size(933, 672);
             dataGridView1.TabIndex = 0;
             dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
             // 
             // barcode
             // 
             barcode.HeaderText = "Barcode";
+            barcode.MinimumWidth = 6;
             barcode.Name = "barcode";
             barcode.ReadOnly = true;
             barcode.Width = 150;
@@ -260,6 +266,7 @@
             // prod_name
             // 
             prod_name.HeaderText = "Item Description";
+            prod_name.MinimumWidth = 6;
             prod_name.Name = "prod_name";
             prod_name.ReadOnly = true;
             prod_name.Resizable = DataGridViewTriState.False;
@@ -268,6 +275,7 @@
             // quantity
             // 
             quantity.HeaderText = "QTY";
+            quantity.MinimumWidth = 6;
             quantity.Name = "quantity";
             quantity.ReadOnly = true;
             quantity.Width = 50;
@@ -275,6 +283,7 @@
             // price
             // 
             price.HeaderText = "SRP";
+            price.MinimumWidth = 6;
             price.Name = "price";
             price.ReadOnly = true;
             price.Width = 50;
@@ -282,6 +291,7 @@
             // amnt
             // 
             amnt.HeaderText = "Amount";
+            amnt.MinimumWidth = 6;
             amnt.Name = "amnt";
             amnt.ReadOnly = true;
             amnt.Width = 50;
@@ -289,6 +299,7 @@
             // disc
             // 
             disc.HeaderText = "Disc %";
+            disc.MinimumWidth = 6;
             disc.Name = "disc";
             disc.ReadOnly = true;
             disc.Width = 50;
@@ -296,19 +307,43 @@
             // regprice
             // 
             regprice.HeaderText = "Reg. SRP";
+            regprice.MinimumWidth = 6;
             regprice.Name = "regprice";
             regprice.ReadOnly = true;
             regprice.Width = 50;
             // 
+            // labelSales
+            // 
+            labelSales.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            labelSales.AutoSize = true;
+            labelSales.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            labelSales.ForeColor = SystemColors.ControlLight;
+            labelSales.Location = new Point(444, 145);
+            labelSales.Name = "labelSales";
+            labelSales.Size = new Size(117, 28);
+            labelSales.TabIndex = 1;
+            labelSales.Text = "Sales Entry";
+            // 
+            // panelTotal
+            // 
+            panelTotal.BackColor = Color.Teal;
+            panelTotal.Controls.Add(txtTotalAmnt);
+            panelTotal.Controls.Add(labelSales);
+            panelTotal.Dock = DockStyle.Top;
+            panelTotal.Location = new Point(0, 0);
+            panelTotal.Name = "panelTotal";
+            panelTotal.Size = new Size(933, 187);
+            panelTotal.TabIndex = 7;
+            // 
             // formPOS
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1124, 646);
-            Controls.Add(panel1);
-            Controls.Add(txtTotalAmnt);
-            Controls.Add(pnlBottom);
+            ClientSize = new Size(1285, 861);
+            Controls.Add(panelTotal);
+            Controls.Add(panelSales);
             Controls.Add(panelBarcode);
+            Margin = new Padding(3, 4, 3, 4);
             Name = "formPOS";
             Text = "Keys: F1 - Barcode, F3-Edit,F6-Cash OUT, F7 - Cash IN, F9-Reprint, F10-Suspend, F10-Suspend,F11-Recall,F12-SDisc.<ENTER>-Browse, /-Quantity";
             FormClosed += formPOS_FormClosed;
@@ -318,12 +353,11 @@
             panelBarcode.PerformLayout();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
-            panel1.ResumeLayout(false);
-            panel1.PerformLayout();
-            panel2.ResumeLayout(false);
+            panelSales.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
+            panelTotal.ResumeLayout(false);
+            panelTotal.PerformLayout();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
@@ -338,9 +372,8 @@
         private TextBox txtUnitPrice;
         private Panel pnlBottom;
         private TextBox txtTotalAmnt;
-        private Panel panel1;
+        private Panel panelSales;
         private Label labelSales;
-        private Panel panel2;
         private DataGridView dataGridView1;
         private DataGridViewTextBoxColumn barcode;
         private DataGridViewTextBoxColumn prod_name;
@@ -352,5 +385,6 @@
         private Label labelBarcode;
         private Button btnRecall;
         private Button btnSuspend;
+        private Panel panelTotal;
     }
 }
