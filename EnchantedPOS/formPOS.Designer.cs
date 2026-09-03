@@ -43,8 +43,6 @@
             txtTotalAmnt = new TextBox();
             panelSales = new Panel();
             dataGridView1 = new DataGridView();
-            labelSales = new Label();
-            panelTotal = new Panel();
             barcode = new DataGridViewTextBoxColumn();
             prod_name = new DataGridViewTextBoxColumn();
             quantity = new DataGridViewTextBoxColumn();
@@ -53,6 +51,8 @@
             disc = new DataGridViewTextBoxColumn();
             regprice = new DataGridViewTextBoxColumn();
             colNonVat = new DataGridViewTextBoxColumn();
+            labelSales = new Label();
+            panelTotal = new Panel();
             panelBarcode.SuspendLayout();
             groupBox1.SuspendLayout();
             panelSales.SuspendLayout();
@@ -257,29 +257,6 @@
             dataGridView1.TabIndex = 0;
             dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
             // 
-            // labelSales
-            // 
-            labelSales.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            labelSales.AutoSize = true;
-            labelSales.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            labelSales.ForeColor = SystemColors.ControlLight;
-            labelSales.Location = new Point(444, 145);
-            labelSales.Name = "labelSales";
-            labelSales.Size = new Size(117, 28);
-            labelSales.TabIndex = 1;
-            labelSales.Text = "Sales Entry";
-            // 
-            // panelTotal
-            // 
-            panelTotal.BackColor = Color.Teal;
-            panelTotal.Controls.Add(txtTotalAmnt);
-            panelTotal.Controls.Add(labelSales);
-            panelTotal.Dock = DockStyle.Top;
-            panelTotal.Location = new Point(0, 0);
-            panelTotal.Name = "panelTotal";
-            panelTotal.Size = new Size(933, 187);
-            panelTotal.TabIndex = 7;
-            // 
             // barcode
             // 
             barcode.HeaderText = "Barcode";
@@ -351,6 +328,29 @@
             colNonVat.Visible = false;
             colNonVat.Width = 125;
             // 
+            // labelSales
+            // 
+            labelSales.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            labelSales.AutoSize = true;
+            labelSales.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            labelSales.ForeColor = SystemColors.ControlLight;
+            labelSales.Location = new Point(444, 145);
+            labelSales.Name = "labelSales";
+            labelSales.Size = new Size(117, 28);
+            labelSales.TabIndex = 1;
+            labelSales.Text = "Sales Entry";
+            // 
+            // panelTotal
+            // 
+            panelTotal.BackColor = Color.Teal;
+            panelTotal.Controls.Add(txtTotalAmnt);
+            panelTotal.Controls.Add(labelSales);
+            panelTotal.Dock = DockStyle.Top;
+            panelTotal.Location = new Point(0, 0);
+            panelTotal.Name = "panelTotal";
+            panelTotal.Size = new Size(933, 187);
+            panelTotal.TabIndex = 7;
+            // 
             // formPOS
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -361,7 +361,7 @@
             Controls.Add(panelBarcode);
             Margin = new Padding(3, 4, 3, 4);
             Name = "formPOS";
-            Text = "Keys: F1 - Barcode, F3-Edit,F6-Cash OUT, F7 - Cash IN, F9-Reprint, F10-Suspend, F10-Suspend,F11-Recall,F12-SDisc.<ENTER>-Browse, /-Quantity";
+            Text = "Keys: F1 - Barcode, F2 - Save, F3-Edit,F6-Cash Drawer, F9-Reprint, F10-Suspend,F11-Recall,F12-SDisc.<ENTER>-Browse, /-Quantity";
             FormClosed += formPOS_FormClosed;
             Load += formPOS_Load;
             KeyDown += formPOS_KeyDown;

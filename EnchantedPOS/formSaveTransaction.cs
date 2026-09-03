@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.OleDb;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
@@ -19,6 +20,8 @@ namespace EnchantedPOS
         {
             InitializeComponent();
 
+            LoadPaymentMethods();
+
             FinalNetAmount = totalAmount;
 
             txtReceivedAmount.ReadOnly = false;
@@ -31,6 +34,65 @@ namespace EnchantedPOS
 
             txtSales.Text = FinalNetAmount.ToString("N2");
             txtNetAmount.Text = FinalNetAmount.ToString("N2");
+        }
+
+        private string GetConnectionString()
+        {
+            // Reference to the directory of the exe file
+            string exeFolder = AppDomain.CurrentDomain.BaseDirectory;
+
+            // Reference to the Path of the Database
+            string dbPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(exeFolder, @"..\..\..\dbEn.accdb"));
+
+            // Access uses an OLEDB provider pointing directly to your local file
+            return $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={dbPath};";
+        }
+
+        private void LoadPaymentMethods()
+        {
+            string query = "SELECT [PAYMENT_METHODS], ENABLED FROM PAYMENT_METHODS";
+
+            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            {
+                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                {
+                    try
+                    {
+                        con.Open();
+                        using (OleDbDataReader reader = cmd.ExecuteReader())
+                        {
+                            while(reader.Read())
+                            {
+                                string method = reader["PAYMENT_METHODS"].ToString().ToUpper().Trim();
+                                bool isEnabled = Convert.ToBoolean(reader["ENABLED"]);
+
+                                switch(method)
+                                {
+                                    case "CASH":
+                                        btnCash.Enabled = isEnabled;
+                                        break;
+                                    case "CARD":
+                                        btnCC.Enabled = isEnabled;
+                                        break;
+                                    case "CHECK":
+                                        btnCheck.Enabled = isEnabled;
+                                        break;
+                                    case "GIFT CERT":
+                                        btnGC.Enabled = isEnabled;
+                                        break;
+                                    case "SALES ON ACCOUNT":
+                                        btnSoA.Enabled = isEnabled;
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Could not load payment settings: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
         }
 
         private void btnCash_Click(object sender, EventArgs e)

@@ -20,6 +20,9 @@ namespace EnchantedPOS
         private DateTime currentTransDate;
         private int currentStation;
         private int currentInvoiceNumber = 0;
+        private string headerBusinessName = "BUSINESS";
+        private string headerAddress = "ADDRESS";
+        private string headerTIN = "000-000-000-000";
 
         public formPOS(int cashierId, string cashier, int shift, decimal funds, DateTime date, int station)
         {
@@ -70,6 +73,35 @@ namespace EnchantedPOS
             }
         }
 
+        private void LoadInvoiceHeader()
+        {
+            string query = "SELECT BUSINESS_NAME, ADDRESS, TIN FROM INVOICE_HEADER WHERE ID = 1";
+
+            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            {
+                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                {
+                    try
+                    {
+                        con.Open();
+                        using (OleDbDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                headerBusinessName = reader["BUSINESS_NAME"].ToString();
+                                headerAddress = reader["ADDRESS"].ToString();
+                                headerTIN = reader["TIN"].ToString();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error loading invoice header: " + ex.Message, "Database Error");
+                    }
+                }
+            }
+        }
+
         private bool isRecalculating = false;
 
         // defaults to regular price
@@ -89,6 +121,41 @@ namespace EnchantedPOS
             return $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={dbPath};";
         }
 
+        private void DeductInventory()
+        {
+            string query = "UPDATE PRODMAST SET STOCK = STOCK - ? WHERE BARCODE = ?";
+
+            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            {
+                try
+                {
+                    con.Open();
+
+                    foreach (DataGridViewRow row in dataGridView1.Rows)
+                    {
+                        if (row.Cells[0].Value != null)
+                        {
+                            string barcode = row.Cells[0].Value.ToString();
+
+                            // Grab the QTY
+                            if (decimal.TryParse(row.Cells[2].Value.ToString(), out decimal qty))
+                            {
+                                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                                {
+                                    cmd.Parameters.AddWithValue("?", qty);
+                                    cmd.Parameters.AddWithValue("?", barcode);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to deduct inventory: " + ex.Message, "Inventory Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
 
         private string SelectDiscountType()
         {
@@ -177,6 +244,7 @@ namespace EnchantedPOS
         {
             setupDataGridView();
             LoadRecoveredTransactions();
+            LoadInvoiceHeader();
 
             this.ActiveControl = txtBarcode;
 
@@ -956,6 +1024,8 @@ namespace EnchantedPOS
                 }
             }
 
+            DeductInventory();
+
             //PRINT THE RECEIPT!
             PrintReceipt(grandTotal, amountReceived, changeAmount);
 
@@ -1013,9 +1083,11 @@ namespace EnchantedPOS
             StringFormat rightAlign = new StringFormat() { Alignment = StringAlignment.Far };
 
             // --HEADER ---
-            g.DrawString("IMTOPMART CORP", fontHeader, brush, centerMargin, yPos, centerAlign);
+            g.DrawString(headerBusinessName, fontHeader, brush, centerMargin, yPos, centerAlign);
             yPos += 25;
-            g.DrawString("00 00, Santo Domingo 1st, Capas, Tarlac", fontRegular, brush, centerMargin, yPos, centerAlign);
+            g.DrawString(headerAddress, fontRegular, brush, centerMargin, yPos, centerAlign);
+            yPos += 15;
+            g.DrawString($"VAT REG TIN: {headerTIN}", fontRegular, brush, centerMargin, yPos, centerAlign);
             yPos += 15;
             g.DrawString(new string('-', 38), fontRegular, brush, leftMargin, yPos);
             yPos += 20;
@@ -1067,17 +1139,55 @@ namespace EnchantedPOS
             yPos += 20;
 
             // --- TOTALS ---
-            g.DrawString("GRAND TOTAL:", fontBold, brush, leftMargin, yPos);
+            decimal totalItems = 0m;
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (row.Cells[0].Value != null)
+                {
+                    decimal.TryParse(row.Cells[2].Value.ToString(), out decimal qty);
+                    totalItems += qty;
+                }
+            }
+
+            decimal totalAmnt = grandTotal;
+            decimal totalRegularAmnt = grandTotal; // Temporary while the Senior Discount is still not implemented yet
+            decimal discountAmount = 0m; // Temporary
+
+
+            // PRINT TOTALS
+            g.DrawString("Total Amnt:", fontRegular, brush, leftMargin, yPos);
+            g.DrawString(totalAmnt.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 15;
+
+            g.DrawString("Total Regular Amnt:", fontRegular, brush, leftMargin, yPos);
+            g.DrawString(totalRegularAmnt.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 15;
+
+            g.DrawString("(Senior/PWD Discount):", fontRegular, brush, leftMargin, yPos);
+            g.DrawString(discountAmount.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 15;
+
+            g.DrawString("Amount to Pay:", fontBold, brush, leftMargin, yPos);
             g.DrawString(grandTotal.ToString("N2"), fontBold, brush, rightMargin, yPos, rightAlign);
-            yPos += 20;
+            yPos += 15;
 
-            g.DrawString("CASH:", fontRegular, brush, leftMargin, yPos);
+            g.DrawString("Amt. Received:", fontRegular, brush, leftMargin, yPos);
             g.DrawString(amountReceived.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
-            yPos += 20;
+            yPos += 15;
 
-            g.DrawString("CHANGE:", fontBold, brush, leftMargin, yPos);
+            g.DrawString("Change Amount:", fontBold, brush, leftMargin, yPos);
             g.DrawString(changeAmount.ToString("N2"), fontBold, brush, rightMargin, yPos, rightAlign);
-            yPos += 30;
+            yPos += 15;
+
+            g.DrawString("Total Item:", fontRegular, brush, leftMargin, yPos);
+            // Using "0" instead of "N2" so quantities like 5 print as "5" instead of "5.00" (Unless you sell by weight!)
+            g.DrawString(totalItems.ToString("0.###"), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 25; // Space before the VAT computation block
+
+            g.DrawString(new string('-', 15), fontRegular, brush, centerMargin, yPos, centerAlign);
+            yPos += 5;
+            g.DrawString("Customer Signature:", fontRegular, brush, centerMargin, yPos, centerAlign);
+            yPos += 15;
 
             // --- VAT COMPUTATION ---
             CalculateVATBreakdown(out decimal vatableSales, out decimal vatAmount, out decimal vatExempt, out decimal zeroRated);
@@ -1098,6 +1208,18 @@ namespace EnchantedPOS
             g.DrawString("Zero Rated Sales:", fontRegular, brush, leftMargin, yPos);
             g.DrawString(zeroRated.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
             yPos += 30;
+
+            // -- FOOTER
+            g.DrawString("This serves as \n your official receipt.", fontBold, brush, centerMargin, yPos, centerAlign);
+            yPos += 30;
+
+            g.DrawString("Please Come Again", fontRegular, brush, centerMargin, yPos, centerAlign);
+            yPos += 25;
+
+            g.DrawString("Please present this receipt in case \n of exchange of merchandise within 7 days.", fontRegular, brush, centerMargin, yPos, centerAlign);
+            yPos += 25;
+
+            g.DrawString("This invoice shall be valid \n for five(5) days from the date \n of the permit to use.", fontRegular, brush, centerMargin, yPos, centerAlign);
         }
 
         private void CalculateVATBreakdown(out decimal vatableSales, out decimal vatAmount, out decimal vatExempt, out decimal zeroRated)
