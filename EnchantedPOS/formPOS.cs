@@ -5,6 +5,7 @@ using System.Data;
 using System.Data.OleDb;
 using System.Drawing;
 using System.Drawing.Printing;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
@@ -274,249 +275,221 @@ namespace EnchantedPOS
 
         }
 
-        private void formPOS_KeyDown(object sender, KeyEventArgs e)
+        private void PromptEditOrVoid()
         {
-
-            // Press ESC for Discount
-            if (e.KeyCode == Keys.Escape)
+            if (!CheckGlobalPassword())
             {
-                if (!CheckGlobalPassword()) // If the password is incorrect
+                MessageBox.Show("Incorrect Password.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+            "Press 'Yes' to EDIT the transaction (Discount/Price).\nPress 'No' to VOID (Clear all items).\nPress 'Cancel' to return.",
+               "Edit or Void",
+            MessageBoxButtons.YesNoCancel,
+            MessageBoxIcon.Question);
+
+            if (result == DialogResult.No) // VOID
+            {
+                DialogResult confirmVoid = MessageBox.Show(
+                    "Are you sure you want to VOID this transaction? This action cannot be undone.",
+                     "Confirm Void",
+                       MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+
+                if (confirmVoid == DialogResult.Yes)
                 {
-                    MessageBox.Show("Incorrect Password.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    e.Handled = true;
-                    e.SuppressKeyPress = true;
-                    return;
+                    dataGridView1.Rows.Clear();
+                    UpdateTotalAmount();
+                    ClearTempRegister();
                 }
-
-                DiscountType? selectedType = SelectDiscountType();
-
-                // If selected a discount 
-
-                if(selectedType != null)
+                txtBarcode.Focus();
+            }
+            else if(result == DialogResult.Yes) // EDIT
+            {
+                dataGridView1.ReadOnly = false;
+                foreach (DataGridViewColumn col in dataGridView1.Columns)
                 {
-                    currentDiscountType = selectedType.Value;
-                    // MessageBox.Show($"Price Mode changed to: {currentDiscountType}.\nAll newly scanned items will use this price tier.", "Mode Updated", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    if (currentDiscountType == DiscountType.Regular)
+                    if (col.Name == "disc" || col.Name == "srp")
                     {
-                        labelSales.Text = "Sales Entry";
+                        col.ReadOnly = false;
+                        col.DefaultCellStyle.BackColor = Color.LightYellow;
                     }
                     else
                     {
-                        labelSales.Text = $"Sales Entry ({currentDiscountType})";
+                        col.ReadOnly = true;
                     }
+                }
+            }
+        }
+
+        private void RemoveSelectedItem()
+        {
+            if (dataGridView1.ReadOnly == false && dataGridView1.CurrentRow != null)
+            {
+                string selectedBarcode = dataGridView1.CurrentRow.Cells[0].Value.ToString();
+                string selectedName = dataGridView1.CurrentRow.Cells[1].Value.ToString();
+
+                DialogResult confirmDelete = MessageBox.Show(
+                    $"Are you sure you want to remove '{selectedName}'?",
+                    "Remove Item",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                if (confirmDelete == DialogResult.Yes)
+                {
+                    dataGridView1.Rows.Remove(dataGridView1.CurrentRow);
+
+                    // Wipe from DB
+                    string query = "DELETE FROM TEMP_REGISTER WHERE STATION_NUM = ? AND INVOICE = ? AND BAR_CODE = ?";
+                    using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+                    {
+                        using (OleDbCommand cmd = new OleDbCommand(query, con))
+                        {
+                            cmd.Parameters.AddWithValue("?", currentStation);
+                            cmd.Parameters.AddWithValue("?", currentInvoiceNumber);
+                            cmd.Parameters.AddWithValue("?", selectedBarcode);
+                            try
+                            {
+                                con.Open();
+                                cmd.ExecuteNonQuery();
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show("Error Removing from Database: " + ex.Message);
+                                return;
+                            }
+                        }
+                    }
+
+                    // Re-save duplicates
+                    foreach (DataGridViewRow row in dataGridView1.Rows)
+                    {
+                        if (row.Cells[0].Value != null && row.Cells[0].Value.ToString() == selectedBarcode)
+                        {
+                            decimal qty = Convert.ToDecimal(row.Cells[2].Value);
+                            string rawUPrice = row.Cells[3].Value.ToString().Replace(",", "");
+                            decimal.TryParse(rawUPrice, out decimal uPrice);
+
+                            string rawAmount = row.Cells[4].Value.ToString().Replace(",", "");
+                            decimal.TryParse(rawAmount, out decimal amount); // Fixed a small typo here for rawAmount
+
+                            string[] names = row.Cells[1].Value.ToString().Split(new string[] { " / " }, StringSplitOptions.None);
+                            string engName = names[0].Trim();
+                            string korName = names.Length > 1 ? names[1].Trim() : "";
+
+                            bool isNonVat = false;
+                            if (row.Cells[7].Value != null)
+                            {
+                                bool.TryParse(row.Cells[7].Value.ToString(), out isNonVat);
+                            }
+
+                            SaveToTempRegister(selectedBarcode, engName, korName, qty, uPrice, amount, isNonVat);
+                        }
+                    }
+                    UpdateTotalAmount();
                     txtBarcode.Focus();
                 }
             }
+        }
 
-            // Press "/" for Quantity
-            if (e.KeyCode == Keys.Divide)
+        private void InitiatePayment()
+        {
+            if (string.IsNullOrWhiteSpace(txtTotalAmnt.Text) || txtTotalAmnt.Text == "0.00")
             {
-                txtQty.Enabled = true;
-                txtQty.Focus();
-                txtQty.SelectAll();
-
-
-                e.Handled = true;
-                e.SuppressKeyPress = true;
+                MessageBox.Show("There are no items to pay for.", "Empty Transaction", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
 
-            // Press F3 to Edit or Void
-            if (e.KeyCode == Keys.F3)
+            string rawTotal = txtTotalAmnt.Text.Replace(",", "");
+
+            if (decimal.TryParse(rawTotal, out decimal currentTotal))
             {
-                //Requires  password first
-                if (!CheckGlobalPassword()) // If the password is incorrect
+                using (formSaveTransaction payForm = new formSaveTransaction(currentTotal))
                 {
-                    MessageBox.Show("Incorrect Password.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    e.Handled = true;
-                    e.SuppressKeyPress = true;
-                    return;
-                }
-                
-                DialogResult result = MessageBox.Show(
-                    "Press 'Yes' to EDIT the transaction (Discount/Price).\nPress 'No' to VOID (Clear all items).\nPress 'Cancel' to return.",
-            "Edit or Void",
-                    MessageBoxButtons.YesNoCancel,
-                    MessageBoxIcon.Question);
-
-                if (result == DialogResult.No) //void 
-                {
-
-                    DialogResult confirmVoid = MessageBox.Show(
-                        "Are you sure you want to VOID this transaction? This action cannot be undone.",
-                        "Confirm Void",
-                        MessageBoxButtons.YesNo,
-                        MessageBoxIcon.Warning);
-
-                    if (confirmVoid == DialogResult.Yes)
+                    if (payForm.ShowDialog() == DialogResult.OK)
                     {
-                        dataGridView1.Rows.Clear();
-                        UpdateTotalAmount();
-                        ClearTempRegister();
-                        txtBarcode.Focus();
+                        decimal change = payForm.FinalChangeAmount;
+                        decimal receivedAmount = payForm.FinalReceivedAmount;
+
+                        txtPrice.Text = change.ToString("N2");
+                        FinalizeTransaction(currentTotal, receivedAmount, change);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Error reading total amount.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void formPOS_KeyDown(object sender, KeyEventArgs e)
+        {
+
+            switch (e.KeyCode)
+            {
+                case Keys.Escape:
+                    // Handle Discount Trigger
+                    if (!CheckGlobalPassword())
+                    {
+                        MessageBox.Show("Incorrect Password.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                     else
                     {
-                        txtBarcode.Focus();
-                    }
-
-                    
-                }
-                else if (result == DialogResult.Yes)  //Edit
-                {
-                    //Turn off the datagrid read only mode
-                    dataGridView1.ReadOnly = false;
-
-                    // Only disc and price will be editable by loop
-                    foreach (DataGridViewColumn col in dataGridView1.Columns)
-                    {
-                        if (col.Name == "disc" || col.Name == "srp")
+                        DiscountType? selectedType = SelectDiscountType();
+                        if (selectedType != null)
                         {
-                            col.ReadOnly = false;
-                            col.DefaultCellStyle.BackColor = Color.LightYellow; // Highlight editable cells
+                            currentDiscountType = selectedType.Value;
+                            labelSales.Text = currentDiscountType == DiscountType.Regular ? "Sales Entry" : $"Sales Entry ({currentDiscountType})";
+                            txtBarcode.Focus();
                         }
-                        else
-                        {
-                            col.ReadOnly = true;
-                        }
-                    }
-                }
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-            }
-
-            if (e.KeyCode == Keys.Delete)
-            {
-                if (dataGridView1.ReadOnly == false && dataGridView1.CurrentRow != null)
-                {
-                    string selectedBarcode = dataGridView1.CurrentRow.Cells[0].Value.ToString();
-                    string selectedName = dataGridView1.CurrentRow.Cells[1].Value.ToString();
-
-                    DialogResult confirmDelete = MessageBox.Show(
-                        $"Are you sure you want to remove '{selectedName}'?",
-                        "Remove Item",
-                        MessageBoxButtons.YesNo,
-                        MessageBoxIcon.Warning);
-
-                    if (confirmDelete == DialogResult.Yes)
-                    {
-                        // Remove only the specific highlighted row from the items
-                        dataGridView1.Rows.Remove(dataGridView1.CurrentRow);
-
-                        // Wipe all the entries of the BARCODE from the database
-                        string query = "DELETE FROM TEMP_REGISTER WHERE STATION_NUM = ? AND INVOICE = ? AND BAR_CODE = ?";
-
-                        using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
-                        {
-                            using (OleDbCommand cmd = new OleDbCommand(query, con))
-                            {
-                                cmd.Parameters.AddWithValue("?", currentStation);
-                                cmd.Parameters.AddWithValue("?", currentInvoiceNumber);
-                                cmd.Parameters.AddWithValue("?", selectedBarcode);
-
-                                try
-                                {
-                                    con.Open();
-                                    cmd.ExecuteNonQuery();
-                                }
-                                catch(Exception ex)
-                                {
-                                    MessageBox.Show("Error Removing from Database: " + ex.Message);
-                                    return;
-                                }
-                            }
-                        }
-                        // Look at the grid if there are duplicates left, re-save them to the database
-                        foreach (DataGridViewRow row in dataGridView1.Rows)
-                        {
-                            //If we found another item in the another row with the same barcode
-                            if (row.Cells[0].Value != null && row.Cells[0].Value.ToString()  == selectedBarcode)
-                            {
-                                decimal qty = Convert.ToDecimal(row.Cells[2].Value); 
-                                
-                                // Clean the comas out and grab the numbers
-                                string rawUPrice = row.Cells[3].Value.ToString().Replace(",", "");
-                                decimal.TryParse(rawUPrice, out decimal uPrice);
-
-                                string rawAmount = row.Cells[4].Value.ToString().Replace(",", "");
-                                decimal.TryParse(rawUPrice,out decimal amount);
-
-                                // Split the combined names back into two strings
-                                string[] names = row.Cells[1].Value.ToString().Split(new string[] { " / " }, StringSplitOptions.None);
-                                string engName = names[0].Trim();
-                                string korName = names.Length > 1 ? names[1].Trim() : "";
-
-                                bool isNonVat = false;
-                                if (row.Cells[7].Value != null)
-                                {
-                                    bool.TryParse(row.Cells[7].Value.ToString(), out isNonVat);
-                                }
-
-                                // Save to the temp register
-                                SaveToTempRegister(selectedBarcode, engName, korName, qty, uPrice, amount, isNonVat);
-                            }
-                        }
-                        UpdateTotalAmount();
-                        txtBarcode.Focus();
                     }
                     e.Handled = true;
                     e.SuppressKeyPress = true;
-                }
-            }
+                    break;
 
-            if (e.KeyCode == Keys.F1)
-            {
-                // Lock the DataGrid 
-                dataGridView1.ReadOnly = true;
+                case Keys.Divide:
+                    // Handle Quantity Input
+                    txtQty.Enabled = true;
+                    txtQty.Focus();
+                    txtQty.SelectAll();
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    break;
 
-                //Reset the Background
-                foreach (DataGridViewColumn col in dataGridView1.Columns)
-                {
-                    col.ReadOnly = true;
-                    col.DefaultCellStyle.BackColor = Color.White; // Changes the color back to white
-                }
+                case Keys.F3:
+                    PromptEditOrVoid();
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    break;
 
-                //Return the focus to the Barcode
-                txtBarcode.Focus();
+                case Keys.Delete:
+                    RemoveSelectedItem();
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    break;
 
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-            }
-
-            // Payment
-            if (e.KeyCode == Keys.F2)
-            {
-               if (string.IsNullOrWhiteSpace(txtTotalAmnt.Text) || txtTotalAmnt.Text == "0.00")
-               {
-                    MessageBox.Show("There are no items to pay for.", "Empty Transaction", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-               }
-
-               string rawTotal = txtTotalAmnt.Text.Replace(",", "");
-               
-                if(decimal.TryParse(rawTotal, out decimal currentTotal))
-                {
-                    using (formSaveTransaction payForm = new formSaveTransaction(currentTotal))
+                case Keys.F1:
+                    // Lock the DataGrid and Return Focus
+                    dataGridView1.ReadOnly = true;
+                    foreach (DataGridViewColumn col in dataGridView1.Columns)
                     {
-                        if(payForm.ShowDialog() == DialogResult.OK)
-                        {
-                            decimal change = payForm.FinalChangeAmount;
-                            decimal receivedAmount = payForm.FinalReceivedAmount;
-
-                            txtPrice.Text = change.ToString("N2");
-                            
-                            // MessageBox.Show($"Payment Succesful!\n Change: {change.ToString("N2")}", "Transaction Complete");
-
-                            FinalizeTransaction(currentTotal,receivedAmount, change);
-                        }
+                        col.ReadOnly = true;
+                        col.DefaultCellStyle.BackColor = Color.White;
                     }
-                }
-                else
-                {
-                    MessageBox.Show("Error reading total amount.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                    txtBarcode.Focus();
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    break;
+
+                case Keys.F2:
+                    InitiatePayment();
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    break;
             }
-            
         }
+
 
         private void UpdateTotalAmount()
         {
