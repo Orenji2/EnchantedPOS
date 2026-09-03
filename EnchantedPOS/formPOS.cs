@@ -13,6 +13,18 @@ namespace EnchantedPOS
 {
     public partial class formPOS : Form
     {
+
+        private bool isRecalculating = false;
+
+        // private string currentDiscountType = "Regular";
+        public enum DiscountType
+        {
+            Regular,
+            Wholesale,
+            VIP,
+            Royal
+        }
+        private DiscountType currentDiscountType = DiscountType.Regular;
         private int currentCashierId;
         private string currentCashier;
         private int currentShift;
@@ -48,7 +60,7 @@ namespace EnchantedPOS
             (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT, CHANGE_AMNT, STATION_NUM, NON_VAT)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
             {
                 using (OleDbCommand cmd = new OleDbCommand(query, con))
                 {
@@ -77,7 +89,7 @@ namespace EnchantedPOS
         {
             string query = "SELECT BUSINESS_NAME, ADDRESS, TIN FROM INVOICE_HEADER WHERE ID = 1";
 
-            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
             {
                 using (OleDbCommand cmd = new OleDbCommand(query, con))
                 {
@@ -102,30 +114,17 @@ namespace EnchantedPOS
             }
         }
 
-        private bool isRecalculating = false;
-
-        // defaults to regular price
-        private string currentDiscountType = "Regular";
 
 
 
-        private string GetConnectionString()
-        {
-            // Reference to the directory of the exe file
-            string exeFolder = AppDomain.CurrentDomain.BaseDirectory;
 
-            // Reference to the Path of the Database
-            string dbPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(exeFolder, @"..\..\..\dbEn.accdb"));
-
-            // Access uses an OLEDB provider pointing directly to your local file
-            return $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={dbPath};";
-        }
+        
 
         private void DeductInventory()
         {
             string query = "UPDATE PRODMAST SET STOCK = STOCK - ? WHERE BARCODE = ?";
 
-            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
             {
                 try
                 {
@@ -157,7 +156,7 @@ namespace EnchantedPOS
             }
         }
 
-        private string SelectDiscountType()
+        private DiscountType? SelectDiscountType()
         {
             Form disc = new Form()
             {
@@ -185,10 +184,10 @@ namespace EnchantedPOS
             DialogResult result = disc.ShowDialog();
 
             // Return the selected type based on which button they clicked
-            if (result == DialogResult.Yes) return "Regular";
-            if (result == DialogResult.No) return "Wholesale";
-            if (result == DialogResult.OK) return "VIP";
-            if (result == DialogResult.Ignore) return "Royal";
+            if (result == DialogResult.Yes) return DiscountType.Regular;
+            if (result == DialogResult.No) return DiscountType.Wholesale;
+            if (result == DialogResult.OK) return DiscountType.VIP;
+            if (result == DialogResult.Ignore) return DiscountType.Royal;
 
             return null;
         }
@@ -255,7 +254,7 @@ namespace EnchantedPOS
         {
             string query = "DELETE FROM TEMP_REGISTER WHERE STATION_NUM = ?";
             
-            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
             {
                 using (OleDbCommand cmd = new OleDbCommand(query, con))
                 {
@@ -289,15 +288,15 @@ namespace EnchantedPOS
                     return;
                 }
 
-                string selectedType = SelectDiscountType();
+                DiscountType? selectedType = SelectDiscountType();
 
                 // If selected a discount 
 
                 if(selectedType != null)
                 {
-                    currentDiscountType = selectedType;
+                    currentDiscountType = selectedType.Value;
                     // MessageBox.Show($"Price Mode changed to: {currentDiscountType}.\nAll newly scanned items will use this price tier.", "Mode Updated", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    if (currentDiscountType == "Regular")
+                    if (currentDiscountType == DiscountType.Regular)
                     {
                         labelSales.Text = "Sales Entry";
                     }
@@ -406,7 +405,7 @@ namespace EnchantedPOS
                         // Wipe all the entries of the BARCODE from the database
                         string query = "DELETE FROM TEMP_REGISTER WHERE STATION_NUM = ? AND INVOICE = ? AND BAR_CODE = ?";
 
-                        using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+                        using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
                         {
                             using (OleDbCommand cmd = new OleDbCommand(query, con))
                             {
@@ -545,98 +544,57 @@ namespace EnchantedPOS
             txtTotalAmnt.Text = totalAmount.ToString("N2");
         }
 
+        private void AddItemToCart(ProductRecord product, decimal quantityOrWeight, string customDisplayName = null)
+        {
+            decimal uPrice = 0m;
+            switch (currentDiscountType)
+            {
+                case DiscountType.Regular: uPrice = product.RegPrice; break;
+                case DiscountType.Wholesale: uPrice = product.WholesalePrice; break;
+                case DiscountType.VIP: uPrice = product.VipPrice; break;
+                case DiscountType.Royal: uPrice = product.RoyalPrice; break;
+            }
+
+            decimal discountPercent = 0m;
+            decimal effectiveSrp = uPrice - (uPrice * (discountPercent / 100));
+            decimal amount = Math.Round(quantityOrWeight * effectiveSrp, MidpointRounding.AwayFromZero);
+
+            string displayName = customDisplayName ?? (string.IsNullOrWhiteSpace(product.KorName) ? product.EngName : $"{product.EngName} / {product.KorName}");
+
+            dataGridView1.Rows.Add(
+                product.Barcode,
+                displayName,
+                quantityOrWeight.ToString("0.###"),
+                effectiveSrp.ToString("F2"),
+                amount.ToString("F2"),
+                discountPercent.ToString() + "%",
+                uPrice.ToString("F2"),
+                product.IsNonVat
+                );
+
+            txtProdName.Text = product.EngName;
+            txtUnitPrice.Text = effectiveSrp.ToString("F2");
+            txtPrice.Text = amount.ToString("F2");
+            SaveToTempRegister(product.Barcode, product.EngName, product.KorName, quantityOrWeight, effectiveSrp, amount, product.IsNonVat);
+            UpdateTotalAmount();
+        }
+
         private void processItem(string Barcode)
         {
-            // Get the QTY (safely parse it, default to 1 if invalid)
-            if (!decimal.TryParse(txtQty.Text, out decimal qtyToAdd) || qtyToAdd <= 0)
+            if(!decimal.TryParse(txtQty.Text, out decimal qtyToAdd) || qtyToAdd <= 0)
             {
                 qtyToAdd = 1;
             }
 
-            //Add the item item in the DataGrid, query the database
+            ProductRecord product = FetchProductFromDatabase(Barcode);
 
-            string query = "SELECT ENG_NAME, KOR_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C, NON_VAT FROM PRODMAST WHERE BARCODE = ?";
-
-            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            if (product == null)
             {
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
-                {
-                    cmd.Parameters.AddWithValue("?", Barcode);
-
-                    try
-                    {
-                        con.Open();
-                        using (OleDbDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-
-                                string prod_name = reader["ENG_NAME"].ToString();
-                                string kor_name = reader["KOR_NAME"].ToString();
-                                string displayName = string.IsNullOrWhiteSpace(kor_name)
-                                    ? prod_name
-                                    : $"{prod_name} / {kor_name}";
-
-                                bool isNonVat = reader["NON_VAT"] != DBNull.Value && Convert.ToBoolean(reader["NON_VAT"]);
-
-                                decimal uPrice = 0m;
-
-                                if(currentDiscountType == "Regular")
-                                {
-                                    uPrice = Convert.ToDecimal(reader["R_PRICE"]);
-                                }
-                                else if(currentDiscountType == "Wholesale")
-                                {
-                                    uPrice = Convert.ToDecimal(reader["D_PRICE_A"]);
-                                }
-                                else if(currentDiscountType == "VIP")
-                                {
-                                    uPrice = Convert.ToDecimal(reader["D_PRICE_B"]);
-                                }
-                                else if(currentDiscountType == "Royal")
-                                {
-                                    uPrice = Convert.ToDecimal(reader["D_PRICE_C"]);
-                                }
-
-                                //Discount logic
-                                decimal discountPercent = 0m;
-
-                                decimal effectiveSrp = uPrice - (uPrice * (discountPercent / 100));
-                                // decimal amount = qtyToAdd * effectiveSrp;
-                                decimal amount = Math.Round(qtyToAdd * effectiveSrp, MidpointRounding.AwayFromZero);
-
-                                //Add the Item to the Data Grid
-                                dataGridView1.Rows.Add(
-                                    Barcode,
-                                    displayName,
-                                    qtyToAdd,
-                                    effectiveSrp.ToString("F2"),
-                                    amount.ToString("F2"),
-                                    discountPercent.ToString() + "%",
-                                    uPrice.ToString("F2"),
-                                    isNonVat
-                                    );
-
-                                txtProdName.Text = prod_name;
-                                txtUnitPrice.Text = effectiveSrp.ToString("F2");
-                                txtPrice.Text = amount.ToString("F2");
-
-                                SaveToTempRegister(Barcode, prod_name, kor_name, qtyToAdd, effectiveSrp, amount, isNonVat);
-
-                                UpdateTotalAmount();
-                            }
-                            else
-                            {
-                                MessageBox.Show("Item not found.", "Unknown Barcode", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Database Error: " + ex.Message, "Error");
-                    }
-                }
+                MessageBox.Show("Item not found.", "Unknown Barcode", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
+
+            AddItemToCart(product, qtyToAdd);
         }
 
         private void processWeightedItem(string scaleBarcode)
@@ -646,23 +604,17 @@ namespace EnchantedPOS
 
             try
             {
-                // 14 digit bacode
                 if (scaleBarcode.Length == 14)
                 {
-                    actualBarcode = scaleBarcode.Substring(3, 4); // Grabs the base barcode
-                    string weightGramsStr = scaleBarcode.Substring(8, 5); // Grabs the weight
-
-                    decimal.TryParse(weightGramsStr, out decimal weigthGrams);
-                    weightInKg = weigthGrams / 1000m; // Converts the grams to kg
+                    actualBarcode = scaleBarcode.Substring(3, 4);
+                    decimal.TryParse(scaleBarcode.Substring(8, 5), out decimal weightGrams);
+                    weightInKg = weightGrams / 1000m;
                 }
-                // For 13 digit barcodes
                 else if (scaleBarcode.Length == 13)
                 {
-                    actualBarcode = scaleBarcode.Substring(3, 4); // Grabs the base barcode
-                    string weightGramsStr = scaleBarcode.Substring(7, 5); // Grabs the weight
-
-                    decimal.TryParse(weightGramsStr, out decimal weightGrams); //Convert the String to decimal
-                    weightInKg = weightGrams / 1000m; 
+                    actualBarcode = scaleBarcode.Substring(3, 4);
+                    decimal.TryParse(scaleBarcode.Substring(7, 5), out decimal weightGrams);
+                    weightInKg = weightGrams / 1000m;
                 }
                 else
                 {
@@ -672,72 +624,24 @@ namespace EnchantedPOS
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to parse weight from Barcode", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Failed to parse weight from Barcode: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
 
-            string query= "SELECT ENG_NAME, KOR_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C, NON_VAT FROM PRODMAST WHERE BARCODE = ?";
+            ProductRecord product = FetchProductFromDatabase(actualBarcode);
 
-            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            if (product == null)
             {
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
-                {
-                    cmd.Parameters.AddWithValue("?", actualBarcode);
-
-                    try
-                    {
-                        con.Open();
-                        using (OleDbDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                string prod_name = reader["ENG_NAME"].ToString();
-                                string kor_name = reader["KOR_NAME"].ToString();
-                                string displayName = string.IsNullOrWhiteSpace(kor_name)
-                                    ? prod_name
-                                    : $"{prod_name} / {kor_name}";
-                                bool isNonVat = reader["NON_VAT"] != DBNull.Value && Convert.ToBoolean(reader["NON_VAT]"]);
-                                decimal uPrice = 0m;
-
-                                // Check Tiered pricing
-                                if (currentDiscountType == "Regular") { uPrice = Convert.ToDecimal(reader["R_PRICE"]); }
-                                else if (currentDiscountType == "Wholesale") { uPrice = Convert.ToDecimal(reader["D_PRICE_A"]); }
-                                else if (currentDiscountType == "VIP") { uPrice = Convert.ToDecimal(reader["D_PRICE_B"]); }
-                                else if (currentDiscountType == "Royal") { uPrice = Convert.ToDecimal(reader["D_PRICE_C"]); }
-
-                                decimal discountPercent = 0m;
-                                decimal effectiveSrp = uPrice - (uPrice * (discountPercent / 100));
-
-                                // MULTIPLY  PRICE PER KG BY THE WEIGHT
-                                decimal amount = Math.Round(weightInKg * effectiveSrp, MidpointRounding.AwayFromZero);
-
-                                // ADD TO THE DATAGRID
-                                dataGridView1.Rows.Add(
-                                    actualBarcode,
-                                    displayName + " (" + weightInKg.ToString("F3") + " kg )",
-                                    weightInKg.ToString("F3"),
-                                    effectiveSrp.ToString("F2"),
-                                    amount.ToString("F2"),
-                                    discountPercent.ToString() + "%",
-                                    uPrice.ToString("F2"),
-                                    isNonVat
-                                );
-
-                                //Save to temp Register
-                                SaveToTempRegister(actualBarcode, prod_name, kor_name, weightInKg, effectiveSrp, amount, isNonVat);
-                                UpdateTotalAmount();
-                            }
-                            else
-                            {
-                                MessageBox.Show("Weighed item not found in the database.", "Uknown Barcode", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Database Error: " + ex.Message, "Error");
-                    }
-                }
+                MessageBox.Show("Weighed item not found in the database.", "Unknown Barcode", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
+
+            // Format the special weight string
+            string baseDisplayName = string.IsNullOrWhiteSpace(product.KorName) ? product.EngName : $"{product.EngName} / {product.KorName}";
+            string displayWithWeight = $"{baseDisplayName} ({weightInKg.ToString("F3")} kg)";
+
+            // Call the new helper, passing in the custom display name!
+            AddItemToCart(product, weightInKg, displayWithWeight);
         }
 
         private void LoadRecoveredTransactions()
@@ -746,7 +650,7 @@ namespace EnchantedPOS
                             FROM TEMP_REGISTER
                             WHERE STATION_NUM = ?";
 
-            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
             {
                 using (OleDbCommand cmd = new OleDbCommand(query, con))
                 {
@@ -946,7 +850,7 @@ namespace EnchantedPOS
         {
             string query = "SELECT MAX(INVOICE) FROM REGISTER";
 
-            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
             {
                 using (OleDbCommand cmd = new OleDbCommand(query, con))
                 {
@@ -988,7 +892,7 @@ namespace EnchantedPOS
                                     SET TRANS_TIME = ?, GRAND_TOTAL = ?, AMOUNT_RECEIVED = ?, CHANGE_AMNT = ?
                                     WHERE STATION_NUM = ? AND INVOICE = ?";
             
-            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
             {
                 try
                 {
@@ -1238,7 +1142,7 @@ namespace EnchantedPOS
                     decimal.TryParse(rawAmount, out decimal rowTotal);
 
                     bool isNonVat = false;
-                    if (row.Cells[7].Value.ToString != null)
+                    if (row.Cells[7].Value.ToString() != null)
                     {
                         bool.TryParse(row.Cells[7].Value.ToString(), out isNonVat);
                     }
@@ -1258,7 +1162,44 @@ namespace EnchantedPOS
 
         }
         
-               
-        
+        private ProductRecord FetchProductFromDatabase (string barcode)
+        {
+            string query = "SELECT ENG_NAME, KOR_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C, NON_VAT FROM PRODMAST WHERE BARCODE = ?";
+
+            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+            {
+                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("?", barcode);
+
+                    try
+                    {
+                        con.Open();
+                        using(OleDbDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                return new ProductRecord
+                                {
+                                    Barcode = barcode,
+                                    EngName = reader["ENG_NAME"].ToString(),
+                                    KorName = reader["KOR_NAME"].ToString(),
+                                    RegPrice = Convert.ToDecimal(reader["R_PRICE"]),
+                                    WholesalePrice = Convert.ToDecimal(reader["D_PRICE_A"]),
+                                    VipPrice = Convert.ToDecimal(reader["D_PRICE_B"]),
+                                    RoyalPrice = Convert.ToDecimal(reader["D_PRICE_C"]),
+                                    IsNonVat = reader["NON_VAT"] != DBNull.Value && Convert.ToBoolean(reader["NON_VAT"])
+                                };
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Database Error: " + ex.Message, "Error");
+                    }
+                }
+            }
+            return null;
+        }
     }
 }
