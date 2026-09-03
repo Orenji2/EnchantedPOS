@@ -52,6 +52,7 @@
             amnt = new DataGridViewTextBoxColumn();
             disc = new DataGridViewTextBoxColumn();
             regprice = new DataGridViewTextBoxColumn();
+            colNonVat = new DataGridViewTextBoxColumn();
             panelBarcode.SuspendLayout();
             groupBox1.SuspendLayout();
             panelSales.SuspendLayout();
@@ -90,6 +91,7 @@
             // 
             // pnlBottom
             // 
+            pnlBottom.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlBottom.BackColor = Color.Teal;
             pnlBottom.Location = new Point(3, 452);
             pnlBottom.Margin = new Padding(3, 4, 3, 4);
@@ -243,7 +245,7 @@
             dataGridView1.BorderStyle = BorderStyle.None;
             dataGridView1.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView1.Columns.AddRange(new DataGridViewColumn[] { barcode, prod_name, quantity, price, amnt, disc, regprice });
+            dataGridView1.Columns.AddRange(new DataGridViewColumn[] { barcode, prod_name, quantity, price, amnt, disc, regprice, colNonVat });
             dataGridView1.Dock = DockStyle.Fill;
             dataGridView1.GridColor = SystemColors.Menu;
             dataGridView1.Location = new Point(0, 0);
@@ -340,6 +342,15 @@
             regprice.ReadOnly = true;
             regprice.Width = 96;
             // 
+            // colNonVat
+            // 
+            colNonVat.HeaderText = "nonVat";
+            colNonVat.MinimumWidth = 6;
+            colNonVat.Name = "colNonVat";
+            colNonVat.ReadOnly = true;
+            colNonVat.Visible = false;
+            colNonVat.Width = 125;
+            // 
             // formPOS
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -391,5 +402,6 @@
         private DataGridViewTextBoxColumn amnt;
         private DataGridViewTextBoxColumn disc;
         private DataGridViewTextBoxColumn regprice;
+        private DataGridViewTextBoxColumn colNonVat;
     }
 }

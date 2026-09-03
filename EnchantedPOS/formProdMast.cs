@@ -65,7 +65,7 @@ namespace EnchantedPOS
             if (radioBarcode.Checked) searchColumn = "BARCODE";
             else if (radioKorProdName.Checked) searchColumn = "KOR_NAME";
 
-            string query = $"SELECT ENG_NAME, R_PRICE, BARCODE FROM PRODMAST WHERE {searchColumn} LIKE ?";
+            string query = $"SELECT ENG_NAME, R_PRICE, BARCODE, STOCK FROM PRODMAST WHERE {searchColumn} LIKE ?";
 
             using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
             {
@@ -81,14 +81,20 @@ namespace EnchantedPOS
                             while (reader.Read())
                             {
                                 string desc = reader["ENG_NAME"].ToString();
-                                string pricePcs = Convert.ToDecimal(reader["R_PRICE"]).ToString("F2");
+                                string pricePcs = Convert.ToDecimal(reader["R_PRICE"]).ToString("N2");
 
                                 string priceBox = "0.00";
 
                                 string barcode = reader["BARCODE"].ToString();
 
+                                int stockOnHand = 0;
+                                if (reader["STOCK"] != DBNull.Value)
+                                {
+                                    stockOnHand = Convert.ToInt32(reader["STOCK"]);
+                                }
+
                                 // Add to grid 
-                                dgvProdList.Rows.Add(desc, pricePcs, priceBox, barcode);
+                                dgvProdList.Rows.Add(desc, pricePcs, priceBox, barcode, stockOnHand);
                             }
                         }
                     }

@@ -39,8 +39,10 @@
             btnAdmin = new Button();
             btnReports = new Button();
             btnPOS = new Button();
+            panelPOSLogin = new Panel();
             gbPOSLogin.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            panelPOSLogin.SuspendLayout();
             SuspendLayout();
             // 
             // lblName
@@ -49,9 +51,9 @@
             lblName.BackColor = Color.Transparent;
             lblName.Font = new Font("Segoe UI Black", 20.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblName.ForeColor = SystemColors.ControlLightLight;
-            lblName.Location = new Point(34, 334);
+            lblName.Location = new Point(31, 123);
             lblName.Name = "lblName";
-            lblName.Size = new Size(256, 37);
+            lblName.Size = new Size(317, 46);
             lblName.TabIndex = 0;
             lblName.Text = "<Business Name>";
             // 
@@ -60,9 +62,9 @@
             lblAddress.AutoSize = true;
             lblAddress.BackColor = Color.Transparent;
             lblAddress.ForeColor = SystemColors.ControlLightLight;
-            lblAddress.Location = new Point(45, 380);
+            lblAddress.Location = new Point(47, 169);
             lblAddress.Name = "lblAddress";
-            lblAddress.Size = new Size(71, 15);
+            lblAddress.Size = new Size(90, 20);
             lblAddress.TabIndex = 1;
             lblAddress.Text = "< Address >";
             // 
@@ -76,9 +78,11 @@
             gbPOSLogin.Controls.Add(pictureBox1);
             gbPOSLogin.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
             gbPOSLogin.ForeColor = SystemColors.ControlLightLight;
-            gbPOSLogin.Location = new Point(369, 141);
+            gbPOSLogin.Location = new Point(59, 15);
+            gbPOSLogin.Margin = new Padding(3, 4, 3, 4);
             gbPOSLogin.Name = "gbPOSLogin";
-            gbPOSLogin.Size = new Size(385, 254);
+            gbPOSLogin.Padding = new Padding(3, 4, 3, 4);
+            gbPOSLogin.Size = new Size(440, 339);
             gbPOSLogin.TabIndex = 2;
             gbPOSLogin.TabStop = false;
             gbPOSLogin.Text = "Log-In";
@@ -87,9 +91,10 @@
             // 
             btnLogOut.Enabled = false;
             btnLogOut.ForeColor = SystemColors.ActiveCaptionText;
-            btnLogOut.Location = new Point(280, 166);
+            btnLogOut.Location = new Point(320, 221);
+            btnLogOut.Margin = new Padding(3, 4, 3, 4);
             btnLogOut.Name = "btnLogOut";
-            btnLogOut.Size = new Size(91, 58);
+            btnLogOut.Size = new Size(104, 77);
             btnLogOut.TabIndex = 4;
             btnLogOut.Text = "LOG OUT";
             btnLogOut.UseVisualStyleBackColor = true;
@@ -97,19 +102,21 @@
             // 
             // txtC_Pass
             // 
-            txtC_Pass.Location = new Point(152, 64);
+            txtC_Pass.Location = new Point(174, 85);
+            txtC_Pass.Margin = new Padding(3, 4, 3, 4);
             txtC_Pass.Name = "txtC_Pass";
-            txtC_Pass.Size = new Size(219, 25);
+            txtC_Pass.Size = new Size(250, 29);
             txtC_Pass.TabIndex = 3;
             txtC_Pass.UseSystemPasswordChar = true;
+            txtC_Pass.KeyDown += txtC_Pass_KeyDown;
             // 
             // lblCashierPass
             // 
             lblCashierPass.AutoSize = true;
             lblCashierPass.ForeColor = SystemColors.ControlLightLight;
-            lblCashierPass.Location = new Point(152, 37);
+            lblCashierPass.Location = new Point(174, 49);
             lblCashierPass.Name = "lblCashierPass";
-            lblCashierPass.Size = new Size(119, 17);
+            lblCashierPass.Size = new Size(154, 23);
             lblCashierPass.TabIndex = 2;
             lblCashierPass.Text = "Enter Access Code";
             // 
@@ -118,74 +125,89 @@
             btnLogIn.BackColor = Color.ForestGreen;
             btnLogIn.FlatStyle = FlatStyle.Flat;
             btnLogIn.ForeColor = SystemColors.ControlLightLight;
-            btnLogIn.Location = new Point(152, 102);
+            btnLogIn.Location = new Point(174, 136);
+            btnLogIn.Margin = new Padding(3, 4, 3, 4);
             btnLogIn.Name = "btnLogIn";
-            btnLogIn.Size = new Size(219, 58);
-            btnLogIn.TabIndex = 1;
+            btnLogIn.Size = new Size(250, 77);
+            btnLogIn.TabIndex = 4;
             btnLogIn.Text = "LOG IN";
             btnLogIn.UseVisualStyleBackColor = false;
             btnLogIn.Click += btnLogIn_Click;
             // 
             // pictureBox1
             // 
-            pictureBox1.Location = new Point(6, 22);
+            pictureBox1.Location = new Point(7, 29);
+            pictureBox1.Margin = new Padding(3, 4, 3, 4);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(140, 138);
+            pictureBox1.Size = new Size(160, 184);
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
             // 
             // btnAdmin
             // 
-            btnAdmin.Enabled = false;
-            btnAdmin.Location = new Point(632, 485);
+            btnAdmin.Location = new Point(959, 549);
+            btnAdmin.Margin = new Padding(3, 4, 3, 4);
             btnAdmin.Name = "btnAdmin";
-            btnAdmin.Size = new Size(122, 113);
-            btnAdmin.TabIndex = 3;
+            btnAdmin.Size = new Size(196, 217);
+            btnAdmin.TabIndex = 2;
             btnAdmin.Text = "Admin Menu";
             btnAdmin.TextAlign = ContentAlignment.BottomCenter;
             btnAdmin.UseVisualStyleBackColor = true;
+            btnAdmin.Click += btnAdmin_Click;
             // 
             // btnReports
             // 
-            btnReports.Enabled = false;
-            btnReports.Location = new Point(503, 485);
+            btnReports.Location = new Point(959, 294);
+            btnReports.Margin = new Padding(3, 4, 3, 4);
             btnReports.Name = "btnReports";
-            btnReports.Size = new Size(122, 113);
-            btnReports.TabIndex = 4;
+            btnReports.Size = new Size(196, 224);
+            btnReports.TabIndex = 1;
             btnReports.Text = "Reports";
             btnReports.TextAlign = ContentAlignment.BottomCenter;
             btnReports.UseVisualStyleBackColor = true;
+            btnReports.Click += btnReports_Click;
             // 
             // btnPOS
             // 
             btnPOS.BackColor = Color.Transparent;
             btnPOS.BackgroundImage = Properties.Resources.cashier__3_;
             btnPOS.BackgroundImageLayout = ImageLayout.Zoom;
-            btnPOS.Enabled = false;
-            btnPOS.Location = new Point(375, 485);
+            btnPOS.Location = new Point(959, 48);
+            btnPOS.Margin = new Padding(3, 4, 3, 4);
             btnPOS.Name = "btnPOS";
-            btnPOS.Size = new Size(122, 113);
-            btnPOS.TabIndex = 5;
+            btnPOS.Size = new Size(196, 221);
+            btnPOS.TabIndex = 0;
             btnPOS.Text = "Point-of-Sales";
             btnPOS.TextAlign = ContentAlignment.BottomCenter;
             btnPOS.UseVisualStyleBackColor = false;
             btnPOS.Click += btnPOS_Click;
             // 
+            // panelPOSLogin
+            // 
+            panelPOSLogin.BackColor = Color.Transparent;
+            panelPOSLogin.Controls.Add(gbPOSLogin);
+            panelPOSLogin.Location = new Point(346, 203);
+            panelPOSLogin.Name = "panelPOSLogin";
+            panelPOSLogin.Size = new Size(591, 389);
+            panelPOSLogin.TabIndex = 6;
+            panelPOSLogin.Visible = false;
+            // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
             BackgroundImage = Properties.Resources._2788686;
             BackgroundImageLayout = ImageLayout.None;
-            ClientSize = new Size(1106, 636);
+            ClientSize = new Size(1264, 848);
+            Controls.Add(panelPOSLogin);
             Controls.Add(btnPOS);
             Controls.Add(btnReports);
             Controls.Add(btnAdmin);
-            Controls.Add(gbPOSLogin);
             Controls.Add(lblAddress);
             Controls.Add(lblName);
             FormBorderStyle = FormBorderStyle.FixedSingle;
+            Margin = new Padding(3, 4, 3, 4);
             MaximizeBox = false;
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
@@ -193,6 +215,7 @@
             gbPOSLogin.ResumeLayout(false);
             gbPOSLogin.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            panelPOSLogin.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -210,5 +233,6 @@
         private Button btnReports;
         private Button btnPOS;
         private Button btnLogOut;
+        private Panel panelPOSLogin;
     }
 }

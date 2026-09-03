@@ -42,6 +42,7 @@
             colPrice = new DataGridViewTextBoxColumn();
             colPriceBox = new DataGridViewTextBoxColumn();
             colBarcode = new DataGridViewTextBoxColumn();
+            colStocks = new DataGridViewTextBoxColumn();
             groupSearchCriteria.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvProdList).BeginInit();
             SuspendLayout();
@@ -157,7 +158,7 @@
             dgvProdList.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dgvProdList.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvProdList.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvProdList.Columns.AddRange(new DataGridViewColumn[] { colProdDesc, colPrice, colPriceBox, colBarcode });
+            dgvProdList.Columns.AddRange(new DataGridViewColumn[] { colProdDesc, colPrice, colPriceBox, colBarcode, colStocks });
             dgvProdList.Location = new Point(30, 209);
             dgvProdList.Margin = new Padding(3, 4, 3, 4);
             dgvProdList.Name = "dgvProdList";
@@ -170,31 +171,48 @@
             // 
             // colProdDesc
             // 
+            colProdDesc.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             colProdDesc.HeaderText = "Product Description";
             colProdDesc.MinimumWidth = 6;
             colProdDesc.Name = "colProdDesc";
             colProdDesc.ReadOnly = true;
+            colProdDesc.Resizable = DataGridViewTriState.False;
             // 
             // colPrice
             // 
+            colPrice.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             colPrice.HeaderText = "Price per PCS";
             colPrice.MinimumWidth = 6;
             colPrice.Name = "colPrice";
             colPrice.ReadOnly = true;
+            colPrice.Width = 125;
             // 
             // colPriceBox
             // 
+            colPriceBox.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             colPriceBox.HeaderText = "Price Per Box";
             colPriceBox.MinimumWidth = 6;
             colPriceBox.Name = "colPriceBox";
             colPriceBox.ReadOnly = true;
+            colPriceBox.Width = 123;
             // 
             // colBarcode
             // 
+            colBarcode.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             colBarcode.HeaderText = "Barcode";
             colBarcode.MinimumWidth = 6;
             colBarcode.Name = "colBarcode";
             colBarcode.ReadOnly = true;
+            colBarcode.Width = 93;
+            // 
+            // colStocks
+            // 
+            colStocks.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            colStocks.HeaderText = "Stocks on Hand";
+            colStocks.MinimumWidth = 6;
+            colStocks.Name = "colStocks";
+            colStocks.ReadOnly = true;
+            colStocks.Width = 141;
             // 
             // formProdBrowse
             // 
@@ -237,5 +255,6 @@
         private DataGridViewTextBoxColumn colPrice;
         private DataGridViewTextBoxColumn colPriceBox;
         private DataGridViewTextBoxColumn colBarcode;
+        private DataGridViewTextBoxColumn colStocks;
     }
 }

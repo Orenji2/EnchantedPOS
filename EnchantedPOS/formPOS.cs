@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.OleDb;
 using System.Drawing;
+using System.Drawing.Printing;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
@@ -38,11 +39,11 @@ namespace EnchantedPOS
         }
 
         // Real-time save method
-        private void SaveToTempRegister(string barcode, string engName, string korName, decimal qty, decimal uPrice, decimal totalAmnt)
+        private void SaveToTempRegister(string barcode, string engName, string korName, decimal qty, decimal uPrice, decimal totalAmnt, bool isNonVat)
         {
             string query = @"INSERT INTO TEMP_REGISTER
-            (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT, CHANGE_AMNT, STATION_NUM, NON_VAT)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
             {
@@ -59,7 +60,9 @@ namespace EnchantedPOS
                     cmd.Parameters.AddWithValue("?", qty);
                     cmd.Parameters.AddWithValue("?", uPrice);
                     cmd.Parameters.AddWithValue("?", totalAmnt);
+                    cmd.Parameters.AddWithValue("?", 0m);
                     cmd.Parameters.AddWithValue("?", currentStation);
+                    cmd.Parameters.AddWithValue("?", isNonVat);
 
                     con.Open();
                     cmd.ExecuteNonQuery();
@@ -318,19 +321,21 @@ namespace EnchantedPOS
             {
                 if (dataGridView1.ReadOnly == false && dataGridView1.CurrentRow != null)
                 {
-                    // Grab the barcode and the item they want to delete
                     string selectedBarcode = dataGridView1.CurrentRow.Cells[0].Value.ToString();
                     string selectedName = dataGridView1.CurrentRow.Cells[1].Value.ToString();
 
                     DialogResult confirmDelete = MessageBox.Show(
-                        $"Are you sure you want to remove '{selectedName}' from this Transaction?",
+                        $"Are you sure you want to remove '{selectedName}'?",
                         "Remove Item",
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning);
 
                     if (confirmDelete == DialogResult.Yes)
                     {
-                        // Delete the item from the Temporary Database First
+                        // Remove only the specific highlighted row from the items
+                        dataGridView1.Rows.Remove(dataGridView1.CurrentRow);
+
+                        // Wipe all the entries of the BARCODE from the database
                         string query = "DELETE FROM TEMP_REGISTER WHERE STATION_NUM = ? AND INVOICE = ? AND BAR_CODE = ?";
 
                         using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
@@ -346,27 +351,46 @@ namespace EnchantedPOS
                                     con.Open();
                                     cmd.ExecuteNonQuery();
                                 }
-                                catch (Exception ex)
+                                catch(Exception ex)
                                 {
-                                    MessageBox.Show("Error Removing item from Database: " + ex.Message);
+                                    MessageBox.Show("Error Removing from Database: " + ex.Message);
                                     return;
                                 }
                             }
                         }
-
-                        // Remove it from dataGrid
-                        for (int i = dataGridView1.Rows.Count - 1; i >=0; i--)
+                        // Look at the grid if there are duplicates left, re-save them to the database
+                        foreach (DataGridViewRow row in dataGridView1.Rows)
                         {
-                            if (dataGridView1.Rows[i].Cells[0].Value.ToString() == selectedBarcode)
+                            //If we found another item in the another row with the same barcode
+                            if (row.Cells[0].Value != null && row.Cells[0].Value.ToString()  == selectedBarcode)
                             {
-                                dataGridView1.Rows.RemoveAt(i);
+                                decimal qty = Convert.ToDecimal(row.Cells[2].Value); 
+                                
+                                // Clean the comas out and grab the numbers
+                                string rawUPrice = row.Cells[3].Value.ToString().Replace(",", "");
+                                decimal.TryParse(rawUPrice, out decimal uPrice);
+
+                                string rawAmount = row.Cells[4].Value.ToString().Replace(",", "");
+                                decimal.TryParse(rawUPrice,out decimal amount);
+
+                                // Split the combined names back into two strings
+                                string[] names = row.Cells[1].Value.ToString().Split(new string[] { " / " }, StringSplitOptions.None);
+                                string engName = names[0].Trim();
+                                string korName = names.Length > 1 ? names[1].Trim() : "";
+
+                                bool isNonVat = false;
+                                if (row.Cells[7].Value != null)
+                                {
+                                    bool.TryParse(row.Cells[7].Value.ToString(), out isNonVat);
+                                }
+
+                                // Save to the temp register
+                                SaveToTempRegister(selectedBarcode, engName, korName, qty, uPrice, amount, isNonVat);
                             }
                         }
-
                         UpdateTotalAmount();
                         txtBarcode.Focus();
                     }
-
                     e.Handled = true;
                     e.SuppressKeyPress = true;
                 }
@@ -389,6 +413,40 @@ namespace EnchantedPOS
 
                 e.Handled = true;
                 e.SuppressKeyPress = true;
+            }
+
+            // Payment
+            if (e.KeyCode == Keys.F2)
+            {
+               if (string.IsNullOrWhiteSpace(txtTotalAmnt.Text) || txtTotalAmnt.Text == "0.00")
+               {
+                    MessageBox.Show("There are no items to pay for.", "Empty Transaction", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+               }
+
+               string rawTotal = txtTotalAmnt.Text.Replace(",", "");
+               
+                if(decimal.TryParse(rawTotal, out decimal currentTotal))
+                {
+                    using (formSaveTransaction payForm = new formSaveTransaction(currentTotal))
+                    {
+                        if(payForm.ShowDialog() == DialogResult.OK)
+                        {
+                            decimal change = payForm.FinalChangeAmount;
+                            decimal receivedAmount = payForm.FinalReceivedAmount;
+
+                            txtPrice.Text = change.ToString("N2");
+                            
+                            // MessageBox.Show($"Payment Succesful!\n Change: {change.ToString("N2")}", "Transaction Complete");
+
+                            FinalizeTransaction(currentTotal,receivedAmount, change);
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Error reading total amount.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             
         }
@@ -429,7 +487,7 @@ namespace EnchantedPOS
 
             //Add the item item in the DataGrid, query the database
 
-            string query = "SELECT ENG_NAME, KOR_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C FROM PRODMAST WHERE BARCODE = ?";
+            string query = "SELECT ENG_NAME, KOR_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C, NON_VAT FROM PRODMAST WHERE BARCODE = ?";
 
             using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
             {
@@ -450,6 +508,9 @@ namespace EnchantedPOS
                                 string displayName = string.IsNullOrWhiteSpace(kor_name)
                                     ? prod_name
                                     : $"{prod_name} / {kor_name}";
+
+                                bool isNonVat = reader["NON_VAT"] != DBNull.Value && Convert.ToBoolean(reader["NON_VAT"]);
+
                                 decimal uPrice = 0m;
 
                                 if(currentDiscountType == "Regular")
@@ -484,15 +545,15 @@ namespace EnchantedPOS
                                     effectiveSrp.ToString("F2"),
                                     amount.ToString("F2"),
                                     discountPercent.ToString() + "%",
-                                    uPrice.ToString("F2")
-
+                                    uPrice.ToString("F2"),
+                                    isNonVat
                                     );
 
                                 txtProdName.Text = prod_name;
                                 txtUnitPrice.Text = effectiveSrp.ToString("F2");
                                 txtPrice.Text = amount.ToString("F2");
 
-                                SaveToTempRegister(Barcode, prod_name, kor_name, qtyToAdd, effectiveSrp, amount);
+                                SaveToTempRegister(Barcode, prod_name, kor_name, qtyToAdd, effectiveSrp, amount, isNonVat);
 
                                 UpdateTotalAmount();
                             }
@@ -529,7 +590,7 @@ namespace EnchantedPOS
                 // For 13 digit barcodes
                 else if (scaleBarcode.Length == 13)
                 {
-                    actualBarcode = scaleBarcode.Substring(2, 4); // Grabs the base barcode
+                    actualBarcode = scaleBarcode.Substring(3, 4); // Grabs the base barcode
                     string weightGramsStr = scaleBarcode.Substring(7, 5); // Grabs the weight
 
                     decimal.TryParse(weightGramsStr, out decimal weightGrams); //Convert the String to decimal
@@ -546,7 +607,7 @@ namespace EnchantedPOS
                 MessageBox.Show("Failed to parse weight from Barcode", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
-            string query= "SELECT ENG_NAME, KOR_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C FROM PRODMAST WHERE BARCODE = ?";
+            string query= "SELECT ENG_NAME, KOR_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C, NON_VAT FROM PRODMAST WHERE BARCODE = ?";
 
             using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
             {
@@ -566,6 +627,7 @@ namespace EnchantedPOS
                                 string displayName = string.IsNullOrWhiteSpace(kor_name)
                                     ? prod_name
                                     : $"{prod_name} / {kor_name}";
+                                bool isNonVat = reader["NON_VAT"] != DBNull.Value && Convert.ToBoolean(reader["NON_VAT]"]);
                                 decimal uPrice = 0m;
 
                                 // Check Tiered pricing
@@ -583,16 +645,17 @@ namespace EnchantedPOS
                                 // ADD TO THE DATAGRID
                                 dataGridView1.Rows.Add(
                                     actualBarcode,
-                                    displayName  + " (" + weightInKg.ToString("F3") + " kg )",
+                                    displayName + " (" + weightInKg.ToString("F3") + " kg )",
                                     weightInKg.ToString("F3"),
                                     effectiveSrp.ToString("F2"),
                                     amount.ToString("F2"),
                                     discountPercent.ToString() + "%",
-                                    uPrice.ToString("F2")
+                                    uPrice.ToString("F2"),
+                                    isNonVat
                                 );
 
                                 //Save to temp Register
-                                SaveToTempRegister(actualBarcode, prod_name, kor_name, weightInKg, effectiveSrp, amount);
+                                SaveToTempRegister(actualBarcode, prod_name, kor_name, weightInKg, effectiveSrp, amount, isNonVat);
                                 UpdateTotalAmount();
                             }
                             else
@@ -646,6 +709,8 @@ namespace EnchantedPOS
                                     ? engName
                                     : $"{engName} / {korName}";
 
+                                bool isNonVat = reader["NON_VAT"] != DBNull.Value && Convert.ToBoolean(reader["NON_VAT"]);
+
                                 dataGridView1.Rows.Add(
                                     barcode,
                                     displayName,
@@ -653,7 +718,8 @@ namespace EnchantedPOS
                                     uPrice.ToString("F2"),
                                     amount.ToString("F2"),
                                     "0%", // Default discount
-                                    uPrice.ToString("F2") // Defaulting regprice
+                                    uPrice.ToString("F2"), // Defaulting regprice
+                                    isNonVat
                                     );
                             }
 
@@ -838,5 +904,239 @@ namespace EnchantedPOS
             }
         }
 
+        private void FinalizeTransaction(decimal grandTotal, decimal amountReceived, decimal changeAmount)
+        {
+
+            
+            
+
+            string insertQuery = @"INSERT INTO REGISTER
+                                   (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM, NON_VAT)
+                                    SELECT INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM, NON_VAT
+                                       FROM TEMP_REGISTER
+                                        WHERE STATION_NUM = ? AND INVOICE = ?";
+
+            string updateQuery = @"UPDATE REGISTER
+                                    SET TRANS_TIME = ?, GRAND_TOTAL = ?, AMOUNT_RECEIVED = ?, CHANGE_AMNT = ?
+                                    WHERE STATION_NUM = ? AND INVOICE = ?";
+            
+            using (OleDbConnection con = new OleDbConnection(GetConnectionString()))
+            {
+                try
+                {
+                    con.Open();
+
+                    // Insert Query 
+                    using (OleDbCommand cmdInsert = new OleDbCommand(insertQuery, con))
+                    {
+                        cmdInsert.Parameters.AddWithValue("?", currentStation);
+                        cmdInsert.Parameters.AddWithValue("?", currentInvoiceNumber);
+                        cmdInsert.ExecuteNonQuery();
+                    }
+
+                    // Update totals
+                    using (OleDbCommand cmdUpdate = new OleDbCommand(updateQuery, con))
+                    {
+                        cmdUpdate.Parameters.AddWithValue("?", DateTime.Now.ToString("hh:mm:ss tt"));
+                        cmdUpdate.Parameters.AddWithValue("?", grandTotal);
+                        cmdUpdate.Parameters.AddWithValue("?", amountReceived);
+                        cmdUpdate.Parameters.AddWithValue("?", changeAmount);
+
+                        // Parameters for the WHERE clause
+                        cmdUpdate.Parameters.AddWithValue("?", currentStation);
+                        cmdUpdate.Parameters.AddWithValue("?", currentInvoiceNumber);
+
+                        cmdUpdate.ExecuteNonQuery();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to Save to Register Databae! Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+
+            //PRINT THE RECEIPT!
+            PrintReceipt(grandTotal, amountReceived, changeAmount);
+
+            ClearTempRegister();
+            dataGridView1.Rows.Clear();
+            currentInvoiceNumber++;
+            UpdateTotalAmount();
+            txtBarcode.Focus();
+        }
+
+        private void PrintReceipt(decimal grandTotal, decimal amountReceived, decimal changeAmount)
+        {
+            PrintDocument printDoc = new PrintDocument();
+            printDoc.PrintPage += (sender, e) => PrintReceiptPage(sender, e, grandTotal, amountReceived, changeAmount);
+
+            try
+            {
+                // printDoc.Print();
+                PrintPreviewDialog previewDialog = new PrintPreviewDialog();
+                previewDialog.Document = printDoc;
+
+                previewDialog.Width = 400;
+                previewDialog.Height = 600;
+
+                bool wasTopMost = this.TopMost;
+                this.TopMost = false;
+
+                // Show the receipt on the screen!
+                previewDialog.ShowDialog(this);
+
+                this.TopMost = wasTopMost;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Printer error:" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+
+        private void PrintReceiptPage(object sender, PrintPageEventArgs e, decimal grandTotal, decimal amountReceived, decimal changeAmount)
+        {
+            Graphics g = e.Graphics;
+
+            Font fontRegular = new Font("Courier New", 8);
+            Font fontBold = new Font("Courier New", 10, FontStyle.Bold);
+            Font fontHeader = new Font("Courier New", 14, FontStyle.Bold);
+            Brush brush = Brushes.Black;
+
+            float yPos = 10;
+            float leftMargin = 5;
+            float centerMargin = 140;
+            float rightMargin = 280;
+
+            StringFormat centerAlign = new StringFormat() { Alignment = StringAlignment.Center };
+            StringFormat rightAlign = new StringFormat() { Alignment = StringAlignment.Far };
+
+            // --HEADER ---
+            g.DrawString("IMTOPMART CORP", fontHeader, brush, centerMargin, yPos, centerAlign);
+            yPos += 25;
+            g.DrawString("00 00, Santo Domingo 1st, Capas, Tarlac", fontRegular, brush, centerMargin, yPos, centerAlign);
+            yPos += 15;
+            g.DrawString(new string('-', 38), fontRegular, brush, leftMargin, yPos);
+            yPos += 20;
+
+            // --- TRANSACTION DETAILS ---
+            g.DrawString($"Invoice: {currentInvoiceNumber}", fontRegular, brush, leftMargin, yPos);
+            yPos += 15;
+            g.DrawString($"Date:    {DateTime.Now.ToString("MM/dd/yyyy hh:mm tt")}", fontRegular, brush, leftMargin, yPos);
+            yPos += 15;
+            g.DrawString($"Cashier: {currentCashier}", fontRegular, brush, leftMargin, yPos);
+            yPos += 20;
+            g.DrawString(new string('-', 38), fontRegular, brush, leftMargin, yPos);
+            yPos += 20;
+
+            // --- COLUMN HEADERS ---
+            g.DrawString("ITEM", fontBold, brush, leftMargin, yPos);
+            g.DrawString("TOTAL", fontBold, brush, rightMargin, yPos, rightAlign);
+            yPos += 20;
+
+            // --- LOOP THROUGH ITEMS IN THE DATAGRID ---
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (row.Cells[0].Value != null)
+                {
+                    // 1. Grab your known columns
+                    string engName = row.Cells[1].Value.ToString();
+                    string qty = row.Cells[2].Value.ToString();
+                    string totalAmount = row.Cells[4].Value.ToString();
+
+                    // 2. Grab your Unit Price 
+                    // -> CHANGE THIS INDEX TO MATCH YOUR DATAGRID! <-
+                    string uPrice = row.Cells[3].Value.ToString();
+
+                    // 3. Print the English Name (It now has the full paper width!)
+                    g.DrawString(engName, fontRegular, brush, leftMargin, yPos);
+                    yPos += 15; // Move down a line
+
+                    // 4. Print the Math (e.g., "  4 x 100.00") on the left, and Total on the right
+                    string mathLine = $"  {qty} x {uPrice}";
+                    g.DrawString(mathLine, fontRegular, brush, leftMargin, yPos);
+                    g.DrawString(totalAmount, fontRegular, brush, rightMargin, yPos, rightAlign);
+
+                    yPos += 22; // Extra spacing before the next product begins
+                }
+            }
+
+            yPos += 5;
+            g.DrawString(new string('-', 38), fontRegular, brush, leftMargin, yPos);
+            yPos += 20;
+
+            // --- TOTALS ---
+            g.DrawString("GRAND TOTAL:", fontBold, brush, leftMargin, yPos);
+            g.DrawString(grandTotal.ToString("N2"), fontBold, brush, rightMargin, yPos, rightAlign);
+            yPos += 20;
+
+            g.DrawString("CASH:", fontRegular, brush, leftMargin, yPos);
+            g.DrawString(amountReceived.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 20;
+
+            g.DrawString("CHANGE:", fontBold, brush, leftMargin, yPos);
+            g.DrawString(changeAmount.ToString("N2"), fontBold, brush, rightMargin, yPos, rightAlign);
+            yPos += 30;
+
+            // --- VAT COMPUTATION ---
+            CalculateVATBreakdown(out decimal vatableSales, out decimal vatAmount, out decimal vatExempt, out decimal zeroRated);
+
+            // Draw VAT
+            g.DrawString("VATable Sales: ", fontRegular, brush, leftMargin, yPos);
+            g.DrawString(vatableSales.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 15;
+
+            g.DrawString("VAT (12%):", fontRegular, brush, leftMargin, yPos);
+            g.DrawString(vatAmount.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 15;
+
+            g.DrawString("VAT Exempt Sales:", fontRegular, brush, leftMargin, yPos);
+            g.DrawString(vatExempt.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 15;
+
+            g.DrawString("Zero Rated Sales:", fontRegular, brush, leftMargin, yPos);
+            g.DrawString(zeroRated.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 30;
+        }
+
+        private void CalculateVATBreakdown(out decimal vatableSales, out decimal vatAmount, out decimal vatExempt, out decimal zeroRated)
+        {
+
+            vatableSales = 0m;
+            vatAmount = 0m;
+            vatExempt = 0m;
+            zeroRated = 0m;
+
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (row.Cells[0].Value != null)
+                {
+                    string rawAmount = row.Cells[4].Value.ToString().Replace(",", "");
+                    decimal.TryParse(rawAmount, out decimal rowTotal);
+
+                    bool isNonVat = false;
+                    if (row.Cells[7].Value.ToString != null)
+                    {
+                        bool.TryParse(row.Cells[7].Value.ToString(), out isNonVat);
+                    }
+
+                    if(isNonVat)
+                    {
+                        vatExempt += rowTotal;
+                    }
+                    else
+                    {
+                        decimal netVat = Math.Round(rowTotal / 1.12m, 2, MidpointRounding.AwayFromZero);
+                        vatableSales += netVat;
+                        vatAmount += (rowTotal - netVat);
+                    }
+                }
+            }
+
+        }
+        
+               
+        
     }
 }

@@ -131,7 +131,7 @@ namespace EnchantedPOS
         private void RouteCashier(int id, string fName, bool isAdmin, bool isCashier)
         {
             //Global values
-            currentCashierId = id; 
+            currentCashierId = id;
             currentFirstName = fName;
             currentIsAdmin = isAdmin;
 
@@ -152,8 +152,31 @@ namespace EnchantedPOS
                 txtC_Pass.Text = "";
                 // Open POS Form
                 openPosForm(fName, isAdmin);
+            }
+            else if (isCashier || (isAdmin && isCashier))
+            {
+                txtC_Pass.Text = "";
+                panelPOSLogin.Visible = false;
 
 
+                formPosLogin loginForm = new formPosLogin(fName, isAdmin, boolLoginStatus);
+
+                if (loginForm.ShowDialog() == DialogResult.OK)
+                {
+                    formPOS pos = new formPOS(
+                    id,
+                    fName,
+                    loginForm.ShiftNumber,
+                    loginForm.ChangeFunds,
+                    loginForm.TransDate,
+                    loginForm.StationNumber
+        );
+                    pos.Show();
+                }
+                
+                btnPOS.Visible = true;
+                btnReports.Visible = true;
+                btnAdmin.Visible = true;
             }
             else
             {
@@ -232,13 +255,24 @@ namespace EnchantedPOS
                     else if (result == DialogResult.Cancel)
                     {
                         // They clicked Cancel! Log them out on THIS exact form.
-                        logOut();
+                        btnPOS.Visible = true;
+                        btnPOS.Enabled = true;
+
+                        btnReports.Visible = true;
+                        btnReports.Enabled = true;
+
+                        btnAdmin.Visible = true;
+                        btnAdmin.Enabled = true;
+
+                        // Hide the login panel if it was showing
+                        // panelLogin.Visible = false;
 
                         // Optionally, re-enable the login button if they cancelled
                         // btnLogIn.Enabled = true; 
                     }
                 }
             }
+           
             else
             {
                 if (existingPos != null)
@@ -290,18 +324,118 @@ namespace EnchantedPOS
                     // this.Hide();
                 }
             }
+            panelPOSLogin.Visible = false;
+            btnPOS.Visible = true;
+            btnReports.Visible = true;
+            btnAdmin.Visible = true;
 
 
         }
 
         private void btnPOS_Click(object sender, EventArgs e)
         {
-            openPosForm(currentFirstName, currentIsAdmin);
+            // openPosForm(currentFirstName, currentIsAdmin);
+            formPOS existingPos = Application.OpenForms.OfType<formPOS>().FirstOrDefault();
+            if (existingPos != null)
+            {
+                if (existingPos.WindowState == FormWindowState.Minimized)
+                {
+                    existingPos.WindowState = FormWindowState.Normal;
+                }
+                existingPos.BringToFront();
+                existingPos.Activate();
+                MessageBox.Show("POS Window is already open.", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            panelPOSLogin.Visible = true;
+
+            btnPOS.Visible = false;
+            btnReports.Visible = false;
+            btnAdmin.Visible = false;
+
+            txtC_Pass.Clear();
+            txtC_Pass.Enabled = true;
+            txtC_Pass.Focus();
+            txtC_Pass.Select();
         }
 
         private void btnLogOut_Click(object sender, EventArgs e)
         {
-            logOut();
+            panelPOSLogin.Visible = false;
+            btnPOS.Visible = true;
+            btnReports.Visible = true;
+            btnAdmin.Visible = true;
+        }
+
+        private void btnAdmin_Click(object sender, EventArgs e)
+        {
+            if (CheckAdminPassword())
+            {
+                MessageBox.Show("Access Granted to Admin Menu.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                // TODO: Open your Admin Form
+            }
+            else
+            {
+                MessageBox.Show("Incorrect Password.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private bool CheckAdminPassword()
+        {
+            string globalPassword = "admin"; //Global Password
+
+            Form prompt = new Form()
+            {
+                Width = 300,
+                Height = 160,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Admin Password",
+                StartPosition = FormStartPosition.CenterScreen,
+                MinimizeBox = false,
+                MaximizeBox = false
+            };
+
+            Label txtPassLabel = new Label() { Left = 20, Top = 20, Text = "Enter Password: " };
+            TextBox inputBox = new TextBox() { Left = 20, Top = 45, Width = 240, PasswordChar = '*' };
+            Button confirmation = new Button() { Text = "OK", Left = 160, Width = 100, Top = 80, DialogResult = DialogResult.OK };
+            Button cancel = new Button() { Text = "Cancel", Left = 50, Width = 100, Top = 80, DialogResult = DialogResult.Cancel };
+
+            prompt.Controls.Add(txtPassLabel);
+            prompt.Controls.Add(inputBox);
+            prompt.Controls.Add(confirmation);
+            prompt.Controls.Add(cancel);
+            prompt.AcceptButton = confirmation; // Pressing Enter clicks OK
+
+            // Show the prompt. If they click OK, check if the password matches.
+            if (prompt.ShowDialog() == DialogResult.OK)
+            {
+                return inputBox.Text == globalPassword;
+            }
+
+            return false; // They clicked Cancel or closed the window
+        }
+
+        private void btnReports_Click(object sender, EventArgs e)
+        {
+            // Prompt for admin password or check if current user is admin
+            if (CheckAdminPassword()) // Reusing your existing manager override method!
+            {
+                MessageBox.Show("Access Granted to Reports.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                // TODO: Open your Reports Form
+            }
+            else
+            {
+                MessageBox.Show("Incorrect Password.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void txtC_Pass_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                btnLogIn.Focus();
+            }
         }
     }
 }
