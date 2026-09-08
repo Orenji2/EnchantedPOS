@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using MySql.Data.MySqlClient;
 
 namespace EnchantedPOS
 {
@@ -8,14 +9,14 @@ namespace EnchantedPOS
     {
         public static string GetConnectionString()
         {
-            // Reference to the directory of the exe file
-            string exeFolder = AppDomain.CurrentDomain.BaseDirectory;
+            return "Server=localhost;Database=EnchantedPOS;Uid=root;Pwd=Ottos-18052025;";
+        }
 
-            // Reference to the Path of the Database
-            string dbPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(exeFolder, @"..\..\..\dbEn.accdb"));
-
-            // Access uses an OLEDB provider pointing directly to your local file
-            return $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={dbPath};";
+        public static MySqlConnection GetConnection()
+        {
+            MySqlConnection con = new MySqlConnection(GetConnectionString());
+            con.Open();
+            return con;
         }
     }
 }
