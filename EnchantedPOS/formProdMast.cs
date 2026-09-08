@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Data.OleDb;
+using MySql.Data.MySqlClient;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
@@ -50,47 +50,44 @@ namespace EnchantedPOS
         {
             dgvProdList.Rows.Clear();
 
-            //Determine which column to search based on radio buttons
-            string searchColumn = "ENG_NAME"; // Default
+            string searchColumn = "PROD_NAME"; // Default
             if (radioBarcode.Checked) searchColumn = "BARCODE";
-            else if (radioKorProdName.Checked) searchColumn = "KOR_NAME";
+            else if (radioKorProdName.Checked) searchColumn = "ALT_PROD_NAME";
 
-            string query = $"SELECT ENG_NAME, R_PRICE, BARCODE, STOCK FROM PRODMAST WHERE {searchColumn} LIKE ?";
+            string query = $@"SELECT BARCODE, PROD_NAME, ALT_PROD_NAME, R_PRICE, STOCK 
+                      FROM PRODMAST 
+                      WHERE {searchColumn} LIKE @search";
 
-            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    cmd.Parameters.AddWithValue("?", "%" + searchTerm + "%");
+                    cmd.Parameters.AddWithValue("@search", "%" + searchTerm + "%");
 
                     try
                     {
-                        con.Open();
-                        using (OleDbDataReader reader = cmd.ExecuteReader())
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                string desc = reader["ENG_NAME"].ToString();
+                                string desc = reader["PROD_NAME"].ToString();
                                 string pricePcs = Convert.ToDecimal(reader["R_PRICE"]).ToString("N2");
-
                                 string priceBox = "0.00";
-
                                 string barcode = reader["BARCODE"].ToString();
 
-                                int stockOnHand = 0;
+
+                                decimal stockOnHand = 0m;
                                 if (reader["STOCK"] != DBNull.Value)
                                 {
-                                    stockOnHand = Convert.ToInt32(reader["STOCK"]);
+                                    stockOnHand = Convert.ToDecimal(reader["STOCK"]);
                                 }
-
-                                // Add to grid 
-                                dgvProdList.Rows.Add(desc, pricePcs, priceBox, barcode, stockOnHand);
+                                 dgvProdList.Rows.Add(desc, pricePcs, priceBox, barcode, stockOnHand);
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        // Console.WriteLine(ex.ToString());
+                        MessageBox.Show("Database Error: " + ex.Message, "Search Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }

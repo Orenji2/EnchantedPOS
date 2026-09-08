@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Data.OleDb;
+using MySql.Data.MySqlClient;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Runtime.CompilerServices;
@@ -55,32 +55,31 @@ namespace EnchantedPOS
         }
 
         // Real-time save method
-        private void SaveToTempRegister(string barcode, string engName, string korName, decimal qty, decimal uPrice, decimal totalAmnt, bool isNonVat)
+        private void SaveToTempRegister(string barcode, string prodName, string altProdName, decimal qty, decimal uPrice, decimal totalAmnt, bool isNonVat)
         {
             string query = @"INSERT INTO TEMP_REGISTER
-            (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT, CHANGE_AMNT, STATION_NUM, NON_VAT)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, PROD_NAME, ALT_PROD_NAME, QTY, U_PRICE, TOTAL_AMNT, CHANGE_AMNT, STATION_NUM, NON_VAT)
+               VALUES (@invoice, @cashier, @shift, @date, @funds, @barcode, @prodName, @altProdName, @qty, @uprice, @total, @change, @station, @nonvat)";
 
-            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    cmd.Parameters.AddWithValue("?", currentInvoiceNumber);
-                    cmd.Parameters.AddWithValue("?", currentCashierId);
-                    cmd.Parameters.AddWithValue("?", currentShift);
-                    cmd.Parameters.AddWithValue("?", currentTransDate.Date);
-                    cmd.Parameters.AddWithValue("?", currentChangeFunds);
-                    cmd.Parameters.AddWithValue("?", barcode);
-                    cmd.Parameters.AddWithValue("?", engName);
-                    cmd.Parameters.AddWithValue("?", korName);
-                    cmd.Parameters.AddWithValue("?", qty);
-                    cmd.Parameters.AddWithValue("?", uPrice);
-                    cmd.Parameters.AddWithValue("?", totalAmnt);
-                    cmd.Parameters.AddWithValue("?", 0m);
-                    cmd.Parameters.AddWithValue("?", currentStation);
-                    cmd.Parameters.AddWithValue("?", isNonVat);
+                    cmd.Parameters.AddWithValue("@invoice", currentInvoiceNumber);
+                    cmd.Parameters.AddWithValue("@cashier", currentCashierId);
+                    cmd.Parameters.AddWithValue("@shift", currentShift);
+                    cmd.Parameters.AddWithValue("@date", currentTransDate.Date);
+                    cmd.Parameters.AddWithValue("@funds", currentChangeFunds);
+                    cmd.Parameters.AddWithValue("@barcode", barcode);
+                    cmd.Parameters.AddWithValue("@prodName", prodName);
+                    cmd.Parameters.AddWithValue("@altProdName", altProdName);
+                    cmd.Parameters.AddWithValue("@qty", qty);
+                    cmd.Parameters.AddWithValue("@uprice", uPrice);
+                    cmd.Parameters.AddWithValue("@total", totalAmnt);
+                    cmd.Parameters.AddWithValue("@change", 0m);
+                    cmd.Parameters.AddWithValue("@station", currentStation);
+                    cmd.Parameters.AddWithValue("@nonvat", isNonVat);
 
-                    con.Open();
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -88,16 +87,16 @@ namespace EnchantedPOS
 
         private void LoadInvoiceHeader()
         {
+            // No parameters needed here!
             string query = "SELECT BUSINESS_NAME, ADDRESS, TIN FROM INVOICE_HEADER WHERE ID = 1";
 
-            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
                     try
                     {
-                        con.Open();
-                        using (OleDbDataReader reader = cmd.ExecuteReader())
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
@@ -114,36 +113,25 @@ namespace EnchantedPOS
                 }
             }
         }
-
-
-
-
-
-        
-
         private void DeductInventory()
         {
-            string query = "UPDATE PRODMAST SET STOCK = STOCK - ? WHERE BARCODE = ?";
+            string query = "UPDATE PRODMAST SET STOCK = STOCK - @qty WHERE BARCODE = @barcode";
 
-            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
                 try
                 {
-                    con.Open();
-
                     foreach (DataGridViewRow row in dataGridView1.Rows)
                     {
                         if (row.Cells[0].Value != null)
                         {
                             string barcode = row.Cells[0].Value.ToString();
-
-                            // Grab the QTY
                             if (decimal.TryParse(row.Cells[2].Value.ToString(), out decimal qty))
                             {
-                                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                                using (MySqlCommand cmd = new MySqlCommand(query, con))
                                 {
-                                    cmd.Parameters.AddWithValue("?", qty);
-                                    cmd.Parameters.AddWithValue("?", barcode);
+                                    cmd.Parameters.AddWithValue("@qty", qty);
+                                    cmd.Parameters.AddWithValue("@barcode", barcode);
                                     cmd.ExecuteNonQuery();
                                 }
                             }
@@ -152,7 +140,7 @@ namespace EnchantedPOS
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Failed to deduct inventory: " + ex.Message, "Inventory Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Failed to deduct inventory: " + ex.Message, "Inventory Error");
                 }
             }
         }
@@ -253,14 +241,13 @@ namespace EnchantedPOS
 
         private void ClearTempRegister()
         {
-            string query = "DELETE FROM TEMP_REGISTER WHERE STATION_NUM = ?";
-            
-            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+            string query = "DELETE FROM TEMP_REGISTER WHERE STATION_NUM = @station";
+
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    cmd.Parameters.AddWithValue("?", currentStation);
-                    con.Open();
+                    cmd.Parameters.AddWithValue("@station", currentStation);
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -342,16 +329,15 @@ namespace EnchantedPOS
 
                     // Wipe from DB
                     string query = "DELETE FROM TEMP_REGISTER WHERE STATION_NUM = ? AND INVOICE = ? AND BAR_CODE = ?";
-                    using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+                    using (MySqlConnection con = new MySqlConnection(DatabaseConfig.GetConnectionString()))
                     {
-                        using (OleDbCommand cmd = new OleDbCommand(query, con))
+                        using (MySqlCommand cmd = new MySqlCommand(query, con))
                         {
                             cmd.Parameters.AddWithValue("?", currentStation);
                             cmd.Parameters.AddWithValue("?", currentInvoiceNumber);
                             cmd.Parameters.AddWithValue("?", selectedBarcode);
                             try
                             {
-                                con.Open();
                                 cmd.ExecuteNonQuery();
                             }
                             catch (Exception ex)
@@ -619,20 +605,19 @@ namespace EnchantedPOS
 
         private void LoadRecoveredTransactions()
         {
-            string query = @"SELECT INVOICE, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT
-                            FROM TEMP_REGISTER
-                            WHERE STATION_NUM = ?";
+            string query = @"SELECT INVOICE, BAR_CODE, PROD_NAME, ALT_PROD_NAME, QTY, U_PRICE, TOTAL_AMNT, NON_VAT
+                     FROM TEMP_REGISTER
+                     WHERE STATION_NUM = @station";
 
-            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    cmd.Parameters.AddWithValue("?", currentStation); // Current Cashier instead of Station?
+                    cmd.Parameters.AddWithValue("@station", currentStation);
 
                     try
                     {
-                        con.Open();
-                        using (OleDbDataReader reader = cmd.ExecuteReader())
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
                             bool hasRecoveredItems = false;
 
@@ -640,19 +625,18 @@ namespace EnchantedPOS
                             {
                                 hasRecoveredItems = true;
 
-                                //Grab the Invoice Number
                                 currentInvoiceNumber = Convert.ToInt32(reader["INVOICE"]);
 
                                 string barcode = reader["BAR_CODE"].ToString();
-                                string engName = reader["ENG_NAME"].ToString();
-                                string korName = reader["KOR_NAME"].ToString();
+                                string prodName = reader["PROD_NAME"].ToString();
+                                string altProdName = reader["ALT_PROD_NAME"].ToString();
                                 decimal qty = Convert.ToDecimal(reader["QTY"]);
                                 decimal uPrice = Convert.ToDecimal(reader["U_PRICE"]);
                                 decimal amount = Convert.ToDecimal(reader["TOTAL_AMNT"]);
 
-                                string displayName = string.IsNullOrWhiteSpace(korName)
-                                    ? engName
-                                    : $"{engName} / {korName}";
+                                string displayName = string.IsNullOrWhiteSpace(altProdName)
+                                    ? prodName
+                                    : $"{prodName} / {altProdName}";
 
                                 bool isNonVat = reader["NON_VAT"] != DBNull.Value && Convert.ToBoolean(reader["NON_VAT"]);
 
@@ -662,20 +646,19 @@ namespace EnchantedPOS
                                     qty,
                                     uPrice.ToString("F2"),
                                     amount.ToString("F2"),
-                                    "0%", // Default discount
-                                    uPrice.ToString("F2"), // Defaulting regprice
+                                    "0%",
+                                    uPrice.ToString("F2"),
                                     isNonVat
-                                    );
+                                );
                             }
 
                             if (hasRecoveredItems)
                             {
                                 UpdateTotalAmount();
-                                MessageBox.Show("An interrupted transaction was recovered succesfully.", "Session restored", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                MessageBox.Show("An interrupted transaction was recovered successfully.", "Session restored", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }
                             else
                             {
-                                // If there is nothing to recover, generate a fresh invoice number
                                 GenerateNewInvoiceNumber();
                             }
                         }
@@ -694,19 +677,6 @@ namespace EnchantedPOS
             {
                 string scannedBarcode = txtBarcode.Text.Trim();
 
-                /**
-                if (!string.IsNullOrEmpty(scannedBarcode))
-                {
-                    processItem(scannedBarcode);
-                }
-                else
-                {
-                    formProdBrowse f = new formProdBrowse();
-                    
-                }
-                **/
-
-                //If the Barcode is empty and Enter is pressed then the Browse Product Will Open
                 if (string.IsNullOrEmpty(scannedBarcode))
                 {
                     formProdBrowse browseForm = new formProdBrowse();
@@ -726,19 +696,14 @@ namespace EnchantedPOS
                 {
                     if (scannedBarcode.StartsWith("20") && scannedBarcode.Length >= 13)
                     {
-                        //Weighted Item Scan
                         processWeightedItem(scannedBarcode);
                     }
                     else
                     {
-                        //Normal Item Scan
                         processItem(scannedBarcode);
                     }
-
-
                 }
 
-                //Resets the field after scanning
                 txtBarcode.Text = "";
                 txtQty.Text = "1";
                 txtQty.Enabled = false;
@@ -823,13 +788,12 @@ namespace EnchantedPOS
         {
             string query = "SELECT MAX(INVOICE) FROM REGISTER";
 
-            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
                     try
                     {
-                        con.Open();
                         object result = cmd.ExecuteScalar();
 
                         if (result != DBNull.Value && result != null)
@@ -838,7 +802,7 @@ namespace EnchantedPOS
                         }
                         else
                         {
-                            currentInvoiceNumber = 10001;
+                            currentInvoiceNumber = 10001; 
                         }
                     }
                     catch (Exception ex)
@@ -851,61 +815,50 @@ namespace EnchantedPOS
 
         private void FinalizeTransaction(decimal grandTotal, decimal amountReceived, decimal changeAmount)
         {
-
-            
-            
-
             string insertQuery = @"INSERT INTO REGISTER
-                                   (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM, NON_VAT)
-                                    SELECT INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, ENG_NAME, KOR_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM, NON_VAT
-                                       FROM TEMP_REGISTER
-                                        WHERE STATION_NUM = ? AND INVOICE = ?";
+                           (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, PROD_NAME, ALT_PROD_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM, NON_VAT)
+                           SELECT INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, PROD_NAME, ALT_PROD_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM, NON_VAT
+                           FROM TEMP_REGISTER
+                           WHERE STATION_NUM = @station AND INVOICE = @invoice";
 
             string updateQuery = @"UPDATE REGISTER
-                                    SET TRANS_TIME = ?, GRAND_TOTAL = ?, AMOUNT_RECEIVED = ?, CHANGE_AMNT = ?
-                                    WHERE STATION_NUM = ? AND INVOICE = ?";
-            
-            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+                           SET TRANS_TIME = @time, GRAND_TOTAL = @grand, AMOUNT_RECEIVED = @received, CHANGE_AMNT = @change
+                           WHERE STATION_NUM = @station AND INVOICE = @invoice";
+
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
                 try
                 {
-                    con.Open();
-
                     // Insert Query 
-                    using (OleDbCommand cmdInsert = new OleDbCommand(insertQuery, con))
+                    using (MySqlCommand cmdInsert = new MySqlCommand(insertQuery, con))
                     {
-                        cmdInsert.Parameters.AddWithValue("?", currentStation);
-                        cmdInsert.Parameters.AddWithValue("?", currentInvoiceNumber);
+                        cmdInsert.Parameters.AddWithValue("@station", currentStation);
+                        cmdInsert.Parameters.AddWithValue("@invoice", currentInvoiceNumber);
                         cmdInsert.ExecuteNonQuery();
                     }
 
                     // Update totals
-                    using (OleDbCommand cmdUpdate = new OleDbCommand(updateQuery, con))
+                    using (MySqlCommand cmdUpdate = new MySqlCommand(updateQuery, con))
                     {
-                        cmdUpdate.Parameters.AddWithValue("?", DateTime.Now.ToString("hh:mm:ss tt"));
-                        cmdUpdate.Parameters.AddWithValue("?", grandTotal);
-                        cmdUpdate.Parameters.AddWithValue("?", amountReceived);
-                        cmdUpdate.Parameters.AddWithValue("?", changeAmount);
-
-                        // Parameters for the WHERE clause
-                        cmdUpdate.Parameters.AddWithValue("?", currentStation);
-                        cmdUpdate.Parameters.AddWithValue("?", currentInvoiceNumber);
+                        cmdUpdate.Parameters.AddWithValue("@time", DateTime.Now.ToString("HH:mm:ss")); // Standard MySQL time format
+                        cmdUpdate.Parameters.AddWithValue("@grand", grandTotal);
+                        cmdUpdate.Parameters.AddWithValue("@received", amountReceived);
+                        cmdUpdate.Parameters.AddWithValue("@change", changeAmount);
+                        cmdUpdate.Parameters.AddWithValue("@station", currentStation);
+                        cmdUpdate.Parameters.AddWithValue("@invoice", currentInvoiceNumber);
 
                         cmdUpdate.ExecuteNonQuery();
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Failed to Save to Register Databae! Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Failed to Save to Register Database! Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
             }
 
             DeductInventory();
-
-            //PRINT THE RECEIPT!
             PrintReceipt(grandTotal, amountReceived, changeAmount);
-
             ClearTempRegister();
             dataGridView1.Rows.Clear();
             currentInvoiceNumber++;
@@ -1134,29 +1087,28 @@ namespace EnchantedPOS
             }
 
         }
-        
-        private ProductRecord FetchProductFromDatabase (string barcode)
-        {
-            string query = "SELECT ENG_NAME, KOR_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C, NON_VAT FROM PRODMAST WHERE BARCODE = ?";
 
-            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+        private ProductRecord FetchProductFromDatabase(string barcode)
+        {
+            string query = "SELECT PROD_NAME, ALT_PROD_NAME, R_PRICE, D_PRICE_A, D_PRICE_B, D_PRICE_C, NON_VAT FROM PRODMAST WHERE BARCODE = @barcode";
+
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    cmd.Parameters.AddWithValue("?", barcode);
+                    cmd.Parameters.AddWithValue("@barcode", barcode);
 
                     try
                     {
-                        con.Open();
-                        using(OleDbDataReader reader = cmd.ExecuteReader())
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
                                 return new ProductRecord
                                 {
                                     Barcode = barcode,
-                                    EngName = reader["ENG_NAME"].ToString(),
-                                    KorName = reader["KOR_NAME"].ToString(),
+                                    EngName = reader["PROD_NAME"].ToString(), 
+                                    KorName = reader["ALT_PROD_NAME"].ToString(), 
                                     RegPrice = Convert.ToDecimal(reader["R_PRICE"]),
                                     WholesalePrice = Convert.ToDecimal(reader["D_PRICE_A"]),
                                     VipPrice = Convert.ToDecimal(reader["D_PRICE_B"]),

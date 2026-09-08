@@ -1,7 +1,7 @@
 using EnchantedPOS;
 using Microsoft.Data.SqlClient;
 using Microsoft.VisualBasic.ApplicationServices;
-using System.Data.OleDb;
+using MySql.Data.MySqlClient;
 using System.Diagnostics.Eventing.Reader;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
@@ -29,19 +29,19 @@ namespace EnchantedPOS
             string dbPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(exeFolder, @"..\..\..\dbEn.accdb"));
 
             // Access uses an OLEDB provider pointing directly to your local file
-            string connString = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={dbPath};";
+            string connString = DatabaseConfig.GetConnectionString();
             string qHeader = "SELECT * FROM businessInfo WHERE ID = @ID";
 
-            using (OleDbConnection conn = new OleDbConnection(connString))
+            using (MySqlConnection conn = new MySqlConnection(connString))
             {
-                using (OleDbCommand cmd = new OleDbCommand(qHeader, conn))
+                using (MySqlCommand cmd = new MySqlCommand(qHeader, conn))
                 {
                     cmd.Parameters.AddWithValue("@ID", 2);
 
                     try
                     {
                         conn.Open(); // Open the connection stream
-                        using (OleDbDataReader reader = cmd.ExecuteReader())
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
@@ -81,27 +81,18 @@ namespace EnchantedPOS
 
         private void CheckCashierLogin(string CashierPass)
         {
-            // Reference to the directory of the exe file
-            string exeFolder = AppDomain.CurrentDomain.BaseDirectory;
 
-            // Reference to the Path of the Database
-            string dbPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(exeFolder, @"..\..\..\dbEn.accdb"));
-
-            // Access uses an OLEDB provider pointing directly to your local file
-            string connString = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={dbPath};";
-
-            using (OleDbConnection con = new OleDbConnection(connString))
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
                 string query = "SELECT USER_ID, F_NAME, IS_ADMIN, IS_CASHIER FROM LOGIN WHERE U_PASS = ?";
 
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
                     cmd.Parameters.AddWithValue("?", CashierPass);
 
                     try
                     {
-                        con.Open();
-                        using (OleDbDataReader reader = cmd.ExecuteReader())
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
@@ -370,15 +361,12 @@ namespace EnchantedPOS
 
         private void btnAdmin_Click(object sender, EventArgs e)
         {
-            if (CheckAdminPassword())
-            {
-                MessageBox.Show("Access Granted to Admin Menu.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                // TODO: Open your Admin Form
-            }
-            else
-            {
-                MessageBox.Show("Incorrect Password.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+            if (!CheckAdminPassword()) return;
+            formAdminDashboard adminForm = new formAdminDashboard();
+            this.Hide();
+            adminForm.ShowDialog();
+            this.Show();
+            
         }
 
         private bool CheckAdminPassword()

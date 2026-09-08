@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Data.OleDb;
+using MySql.Data.MySqlClient;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
@@ -42,14 +42,13 @@ namespace EnchantedPOS
         {
             string query = "SELECT [PAYMENT_METHODS], ENABLED FROM PAYMENT_METHODS";
 
-            using (OleDbConnection con = new OleDbConnection(DatabaseConfig.GetConnectionString()))
+            using (MySqlConnection con = new MySqlConnection(DatabaseConfig.GetConnectionString()))
             {
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
                     try
                     {
-                        con.Open();
-                        using (OleDbDataReader reader = cmd.ExecuteReader())
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
                             while(reader.Read())
                             {
