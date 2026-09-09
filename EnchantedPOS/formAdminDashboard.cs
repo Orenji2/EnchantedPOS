@@ -52,5 +52,11 @@ namespace EnchantedPOS
             ucProductMaster productMasterScreen = new ucProductMaster();
             LoadModule(productMasterScreen);
         }
+
+        private void btnFileMaintenance_Click(object sender, EventArgs e)
+        {
+            ucFileMaintenance fileMaintenanceScreen = new ucFileMaintenance();
+            LoadModule(fileMaintenanceScreen);
+        }
     }
 }

@@ -104,6 +104,7 @@
             btnFileMaintenance.TabIndex = 1;
             btnFileMaintenance.Text = "FILE MAINTENANCE";
             btnFileMaintenance.UseVisualStyleBackColor = true;
+            btnFileMaintenance.Click += btnFileMaintenance_Click;
             // 
             // btnDashboard
             // 
