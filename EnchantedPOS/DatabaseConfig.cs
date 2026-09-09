@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Configuration;
 using MySql.Data.MySqlClient;
 
 namespace EnchantedPOS
@@ -9,7 +10,7 @@ namespace EnchantedPOS
     {
         public static string GetConnectionString()
         {
-            return "Server=localhost;Database=EnchantedPOS;Uid=root;Pwd=Ottos-18052025;";
+            return ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
         }
 
         public static MySqlConnection GetConnection()

@@ -72,16 +72,25 @@
             txtMarkPrice = new TextBox();
             cbIsNonVat = new CheckBox();
             btnHistory = new Button();
+            panelBottomButtons = new Panel();
+            panelProductsList = new Panel();
+            panelWorkspace = new Panel();
+            textBox1 = new TextBox();
+            labelSKU = new Label();
+            label13 = new Label();
             ((System.ComponentModel.ISupportInitialize)dgvProducts).BeginInit();
             groupCostPriice.SuspendLayout();
             groupStock.SuspendLayout();
             groupCost.SuspendLayout();
             groupPricePercentage.SuspendLayout();
+            panelBottomButtons.SuspendLayout();
+            panelProductsList.SuspendLayout();
+            panelWorkspace.SuspendLayout();
             SuspendLayout();
             // 
             // btnAdd
             // 
-            btnAdd.Location = new Point(20, 670);
+            btnAdd.Location = new Point(58, 10);
             btnAdd.Name = "btnAdd";
             btnAdd.Size = new Size(120, 68);
             btnAdd.TabIndex = 0;
@@ -91,7 +100,7 @@
             // 
             // btnEdit
             // 
-            btnEdit.Location = new Point(146, 670);
+            btnEdit.Location = new Point(184, 10);
             btnEdit.Name = "btnEdit";
             btnEdit.Size = new Size(120, 68);
             btnEdit.TabIndex = 1;
@@ -101,7 +110,7 @@
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(272, 670);
+            btnSave.Location = new Point(310, 10);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(120, 68);
             btnSave.TabIndex = 2;
@@ -111,7 +120,7 @@
             // 
             // btnDelete
             // 
-            btnDelete.Location = new Point(398, 670);
+            btnDelete.Location = new Point(436, 10);
             btnDelete.Name = "btnDelete";
             btnDelete.Size = new Size(120, 68);
             btnDelete.TabIndex = 3;
@@ -121,7 +130,7 @@
             // 
             // btnCancel
             // 
-            btnCancel.Location = new Point(524, 670);
+            btnCancel.Location = new Point(562, 10);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(120, 68);
             btnCancel.TabIndex = 4;
@@ -131,11 +140,12 @@
             // 
             // dgvProducts
             // 
+            dgvProducts.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dgvProducts.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvProducts.Location = new Point(13, 30);
             dgvProducts.Name = "dgvProducts";
             dgvProducts.RowHeadersWidth = 51;
-            dgvProducts.Size = new Size(960, 310);
+            dgvProducts.Size = new Size(862, 310);
             dgvProducts.TabIndex = 5;
             dgvProducts.CellClick += dgvProducts_CellClick;
             dgvProducts.CellContentClick += dgvProducts_CellContentClick;
@@ -151,7 +161,7 @@
             // 
             // txtBarcode
             // 
-            txtBarcode.Location = new Point(13, 373);
+            txtBarcode.Location = new Point(12, 28);
             txtBarcode.Name = "txtBarcode";
             txtBarcode.Size = new Size(223, 27);
             txtBarcode.TabIndex = 7;
@@ -159,16 +169,18 @@
             // 
             // txtProdName
             // 
-            txtProdName.Location = new Point(263, 373);
+            txtProdName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            txtProdName.Location = new Point(262, 28);
             txtProdName.Name = "txtProdName";
-            txtProdName.Size = new Size(710, 27);
+            txtProdName.Size = new Size(612, 27);
             txtProdName.TabIndex = 8;
             // 
             // txtAltProdName
             // 
-            txtAltProdName.Location = new Point(263, 406);
+            txtAltProdName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            txtAltProdName.Location = new Point(262, 77);
             txtAltProdName.Name = "txtAltProdName";
-            txtAltProdName.Size = new Size(710, 27);
+            txtAltProdName.Size = new Size(612, 27);
             txtAltProdName.TabIndex = 9;
             // 
             // txtItemCost
@@ -190,16 +202,16 @@
             // labelDesc
             // 
             labelDesc.AutoSize = true;
-            labelDesc.Location = new Point(263, 350);
+            labelDesc.Location = new Point(262, 5);
             labelDesc.Name = "labelDesc";
-            labelDesc.Size = new Size(146, 20);
+            labelDesc.Size = new Size(104, 20);
             labelDesc.TabIndex = 12;
-            labelDesc.Text = "Product Descriptions";
+            labelDesc.Text = "Product Name";
             // 
             // labelBarcode
             // 
             labelBarcode.AutoSize = true;
-            labelBarcode.Location = new Point(13, 350);
+            labelBarcode.Location = new Point(12, 5);
             labelBarcode.Name = "labelBarcode";
             labelBarcode.Size = new Size(64, 20);
             labelBarcode.TabIndex = 13;
@@ -226,6 +238,7 @@
             // groupCostPriice
             // 
             groupCostPriice.Controls.Add(label7);
+            groupCostPriice.Controls.Add(cbIsNonVat);
             groupCostPriice.Controls.Add(label6);
             groupCostPriice.Controls.Add(label5);
             groupCostPriice.Controls.Add(txtPriceRoyal);
@@ -235,9 +248,9 @@
             groupCostPriice.Controls.Add(labelCost);
             groupCostPriice.Controls.Add(txtItemPrice);
             groupCostPriice.Controls.Add(txtItemCost);
-            groupCostPriice.Location = new Point(263, 439);
+            groupCostPriice.Location = new Point(17, 138);
             groupCostPriice.Name = "groupCostPriice";
-            groupCostPriice.Size = new Size(486, 89);
+            groupCostPriice.Size = new Size(486, 119);
             groupCostPriice.TabIndex = 16;
             groupCostPriice.TabStop = false;
             groupCostPriice.Text = "Prices";
@@ -316,9 +329,9 @@
             groupStock.Controls.Add(txtWhStock);
             groupStock.Controls.Add(labelStoreStock);
             groupStock.Controls.Add(txtStoreStock);
-            groupStock.Location = new Point(755, 439);
+            groupStock.Location = new Point(520, 142);
             groupStock.Name = "groupStock";
-            groupStock.Size = new Size(218, 98);
+            groupStock.Size = new Size(214, 98);
             groupStock.TabIndex = 17;
             groupStock.TabStop = false;
             groupStock.Text = "Stock";
@@ -346,7 +359,7 @@
             groupCost.Controls.Add(txtInvCost);
             groupCost.Controls.Add(label3);
             groupCost.Controls.Add(label4);
-            groupCost.Location = new Point(755, 546);
+            groupCost.Location = new Point(520, 246);
             groupCost.Name = "groupCost";
             groupCost.Size = new Size(218, 98);
             groupCost.TabIndex = 19;
@@ -396,16 +409,16 @@
             groupPricePercentage.Controls.Add(label10);
             groupPricePercentage.Controls.Add(label11);
             groupPricePercentage.Controls.Add(txtMarkPrice);
-            groupPricePercentage.Location = new Point(263, 534);
+            groupPricePercentage.Location = new Point(17, 263);
             groupPricePercentage.Name = "groupPricePercentage";
-            groupPricePercentage.Size = new Size(486, 111);
+            groupPricePercentage.Size = new Size(486, 81);
             groupPricePercentage.TabIndex = 22;
             groupPricePercentage.TabStop = false;
             groupPricePercentage.Text = "Price Mark Ups %";
             // 
             // txtMarkRoyal
             // 
-            txtMarkRoyal.Location = new Point(344, 58);
+            txtMarkRoyal.Location = new Point(344, 46);
             txtMarkRoyal.Name = "txtMarkRoyal";
             txtMarkRoyal.Size = new Size(89, 27);
             txtMarkRoyal.TabIndex = 24;
@@ -413,7 +426,7 @@
             // 
             // txtMarkVip
             // 
-            txtMarkVip.Location = new Point(249, 58);
+            txtMarkVip.Location = new Point(249, 46);
             txtMarkVip.Name = "txtMarkVip";
             txtMarkVip.Size = new Size(89, 27);
             txtMarkVip.TabIndex = 23;
@@ -421,7 +434,7 @@
             // 
             // txtMarkWholesale
             // 
-            txtMarkWholesale.Location = new Point(154, 58);
+            txtMarkWholesale.Location = new Point(154, 46);
             txtMarkWholesale.Name = "txtMarkWholesale";
             txtMarkWholesale.Size = new Size(89, 27);
             txtMarkWholesale.TabIndex = 22;
@@ -430,7 +443,7 @@
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new Point(344, 35);
+            label8.Location = new Point(345, 23);
             label8.Name = "label8";
             label8.Size = new Size(46, 20);
             label8.TabIndex = 21;
@@ -439,7 +452,7 @@
             // label9
             // 
             label9.AutoSize = true;
-            label9.Location = new Point(249, 35);
+            label9.Location = new Point(249, 23);
             label9.Name = "label9";
             label9.Size = new Size(30, 20);
             label9.TabIndex = 20;
@@ -448,7 +461,7 @@
             // label10
             // 
             label10.AutoSize = true;
-            label10.Location = new Point(154, 35);
+            label10.Location = new Point(154, 23);
             label10.Name = "label10";
             label10.Size = new Size(78, 20);
             label10.TabIndex = 19;
@@ -457,7 +470,7 @@
             // label11
             // 
             label11.AutoSize = true;
-            label11.Location = new Point(59, 35);
+            label11.Location = new Point(59, 23);
             label11.Name = "label11";
             label11.Size = new Size(75, 20);
             label11.TabIndex = 15;
@@ -465,7 +478,7 @@
             // 
             // txtMarkPrice
             // 
-            txtMarkPrice.Location = new Point(59, 58);
+            txtMarkPrice.Location = new Point(59, 46);
             txtMarkPrice.Name = "txtMarkPrice";
             txtMarkPrice.Size = new Size(89, 27);
             txtMarkPrice.TabIndex = 11;
@@ -474,7 +487,7 @@
             // cbIsNonVat
             // 
             cbIsNonVat.AutoSize = true;
-            cbIsNonVat.Location = new Point(18, 409);
+            cbIsNonVat.Location = new Point(385, 79);
             cbIsNonVat.Name = "cbIsNonVat";
             cbIsNonVat.Size = new Size(95, 24);
             cbIsNonVat.TabIndex = 23;
@@ -483,37 +496,91 @@
             // 
             // btnHistory
             // 
-            btnHistory.Location = new Point(650, 670);
+            btnHistory.Location = new Point(755, 10);
             btnHistory.Name = "btnHistory";
             btnHistory.Size = new Size(120, 68);
             btnHistory.TabIndex = 24;
             btnHistory.Text = "Purchases\r\nHistory";
             btnHistory.UseVisualStyleBackColor = true;
             // 
+            // panelBottomButtons
+            // 
+            panelBottomButtons.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            panelBottomButtons.Controls.Add(btnHistory);
+            panelBottomButtons.Controls.Add(btnCancel);
+            panelBottomButtons.Controls.Add(btnDelete);
+            panelBottomButtons.Controls.Add(btnSave);
+            panelBottomButtons.Controls.Add(btnEdit);
+            panelBottomButtons.Controls.Add(btnAdd);
+            panelBottomButtons.Location = new Point(0, 695);
+            panelBottomButtons.Name = "panelBottomButtons";
+            panelBottomButtons.Size = new Size(891, 85);
+            panelBottomButtons.TabIndex = 25;
+            // 
+            // panelProductsList
+            // 
+            panelProductsList.Controls.Add(labelProducts);
+            panelProductsList.Controls.Add(dgvProducts);
+            panelProductsList.Dock = DockStyle.Top;
+            panelProductsList.Location = new Point(0, 0);
+            panelProductsList.Name = "panelProductsList";
+            panelProductsList.Size = new Size(891, 347);
+            panelProductsList.TabIndex = 26;
+            // 
+            // panelWorkspace
+            // 
+            panelWorkspace.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            panelWorkspace.Controls.Add(label13);
+            panelWorkspace.Controls.Add(labelSKU);
+            panelWorkspace.Controls.Add(textBox1);
+            panelWorkspace.Controls.Add(groupPricePercentage);
+            panelWorkspace.Controls.Add(groupCost);
+            panelWorkspace.Controls.Add(groupStock);
+            panelWorkspace.Controls.Add(groupCostPriice);
+            panelWorkspace.Controls.Add(labelBarcode);
+            panelWorkspace.Controls.Add(labelDesc);
+            panelWorkspace.Controls.Add(txtAltProdName);
+            panelWorkspace.Controls.Add(txtProdName);
+            panelWorkspace.Controls.Add(txtBarcode);
+            panelWorkspace.Location = new Point(1, 345);
+            panelWorkspace.Name = "panelWorkspace";
+            panelWorkspace.Size = new Size(889, 349);
+            panelWorkspace.TabIndex = 27;
+            // 
+            // textBox1
+            // 
+            textBox1.Location = new Point(12, 77);
+            textBox1.Name = "textBox1";
+            textBox1.Size = new Size(223, 27);
+            textBox1.TabIndex = 24;
+            // 
+            // labelSKU
+            // 
+            labelSKU.AutoSize = true;
+            labelSKU.Location = new Point(14, 57);
+            labelSKU.Name = "labelSKU";
+            labelSKU.Size = new Size(36, 20);
+            labelSKU.TabIndex = 25;
+            labelSKU.Text = "SKU";
+            // 
+            // label13
+            // 
+            label13.AutoSize = true;
+            label13.Location = new Point(262, 57);
+            label13.Name = "label13";
+            label13.Size = new Size(137, 20);
+            label13.TabIndex = 26;
+            label13.Text = "Product Name (Alt)";
+            // 
             // ucProductMaster
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            Controls.Add(btnHistory);
-            Controls.Add(cbIsNonVat);
-            Controls.Add(groupPricePercentage);
-            Controls.Add(groupCost);
-            Controls.Add(groupStock);
-            Controls.Add(groupCostPriice);
-            Controls.Add(labelBarcode);
-            Controls.Add(labelDesc);
-            Controls.Add(txtAltProdName);
-            Controls.Add(txtProdName);
-            Controls.Add(txtBarcode);
-            Controls.Add(labelProducts);
-            Controls.Add(dgvProducts);
-            Controls.Add(btnCancel);
-            Controls.Add(btnDelete);
-            Controls.Add(btnSave);
-            Controls.Add(btnEdit);
-            Controls.Add(btnAdd);
+            Controls.Add(panelWorkspace);
+            Controls.Add(panelProductsList);
+            Controls.Add(panelBottomButtons);
             Name = "ucProductMaster";
-            Size = new Size(989, 741);
+            Size = new Size(891, 780);
             ((System.ComponentModel.ISupportInitialize)dgvProducts).EndInit();
             groupCostPriice.ResumeLayout(false);
             groupCostPriice.PerformLayout();
@@ -523,8 +590,12 @@
             groupCost.PerformLayout();
             groupPricePercentage.ResumeLayout(false);
             groupPricePercentage.PerformLayout();
+            panelBottomButtons.ResumeLayout(false);
+            panelProductsList.ResumeLayout(false);
+            panelProductsList.PerformLayout();
+            panelWorkspace.ResumeLayout(false);
+            panelWorkspace.PerformLayout();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
@@ -580,5 +651,11 @@
         private TextBox txtMarkRoyal;
         private TextBox txtMarkVip;
         private TextBox txtMarkWholesale;
+        private Panel panelBottomButtons;
+        private Panel panelProductsList;
+        private Panel panelWorkspace;
+        private Label label13;
+        private Label labelSKU;
+        private TextBox textBox1;
     }
 }

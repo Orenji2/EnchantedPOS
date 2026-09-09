@@ -22,13 +22,6 @@ namespace EnchantedPOS
         {
             InitializeComponent();
 
-            // Reference to the directory of the exe file
-            string exeFolder = AppDomain.CurrentDomain.BaseDirectory;
-
-            // Reference to the Path of the Database
-            string dbPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(exeFolder, @"..\..\..\dbEn.accdb"));
-
-            // Access uses an OLEDB provider pointing directly to your local file
             string connString = DatabaseConfig.GetConnectionString();
             string qHeader = "SELECT * FROM businessInfo WHERE ID = @ID";
 

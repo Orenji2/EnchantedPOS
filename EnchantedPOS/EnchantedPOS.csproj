@@ -29,4 +29,12 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <EditorConfigFiles Remove="C:\Users\reina\source\repos\EnchantedPOS\EnchantedPOS\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="C:\Users\reina\source\repos\EnchantedPOS\EnchantedPOS\.editorconfig" />
+  </ItemGroup>
+
 </Project>

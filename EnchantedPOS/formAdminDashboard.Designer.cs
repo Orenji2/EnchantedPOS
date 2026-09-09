@@ -49,7 +49,7 @@
             panelSidebar.Dock = DockStyle.Left;
             panelSidebar.Location = new Point(0, 0);
             panelSidebar.Name = "panelSidebar";
-            panelSidebar.Size = new Size(250, 753);
+            panelSidebar.Size = new Size(250, 721);
             panelSidebar.TabIndex = 0;
             // 
             // button1
@@ -124,16 +124,17 @@
             panelWorkspace.Dock = DockStyle.Fill;
             panelWorkspace.Location = new Point(250, 0);
             panelWorkspace.Name = "panelWorkspace";
-            panelWorkspace.Size = new Size(932, 753);
+            panelWorkspace.Size = new Size(756, 721);
             panelWorkspace.TabIndex = 1;
             // 
             // formAdminDashboard
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1182, 753);
+            ClientSize = new Size(1006, 721);
             Controls.Add(panelWorkspace);
             Controls.Add(panelSidebar);
+            MinimumSize = new Size(1024, 768);
             Name = "formAdminDashboard";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Admin Dashboard";
