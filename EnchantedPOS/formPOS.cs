@@ -194,9 +194,162 @@ namespace EnchantedPOS
                 return true;
             }
 
+            else if (keyData == Keys.F5)
+            {
+                // Safety check: Ensure the cart is empty before closing the shift!
+                if (dataGridView1.Rows.Count > 0 && !dataGridView1.Rows[0].IsNewRow)
+                {
+                    MessageBox.Show("Please finish or suspend the current transaction before printing an X-Reading.", "Cart Not Empty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return true;
+                }
+
+                DialogResult confirm = MessageBox.Show($"Print X-Reading and close Shift {currentShift} for {currentCashier}?", "End Shift", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (confirm == DialogResult.Yes)
+                {
+                    GenerateXReading();
+                }
+                return true;
+            }
+
             // Let all other normal keys (like typing barcodes) pass through normally
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
+        private void GenerateXReading()
+        {
+            decimal shiftTotalSales = 0m;
+            int transactionCount = 0;
+            decimal vatableGross = 0m;
+            decimal vatExemptGross = 0m;
+
+            string query = @"
+                            SELECT 
+                                (SELECT COUNT(DISTINCT INVOICE) FROM REGISTER WHERE CASHIER_ID = @cashier AND SHIFT_NUM = @shift AND TRANS_DATE = @date AND STATION_NUM = @station) AS TotalTransactions,
+                                (SELECT SUM(InvoiceTotal) FROM (SELECT MAX(GRAND_TOTAL) AS InvoiceTotal FROM REGISTER WHERE CASHIER_ID = @cashier AND SHIFT_NUM = @shift AND TRANS_DATE = @date AND STATION_NUM = @station GROUP BY INVOICE) AS SubT) AS TotalSales,
+                                SUM(CASE WHEN NON_VAT = 0 THEN TOTAL_AMNT ELSE 0 END) AS VatableGross,
+                                SUM(CASE WHEN NON_VAT = 1 THEN TOTAL_AMNT ELSE 0 END) AS VatExemptGross
+                            FROM REGISTER
+                            WHERE CASHIER_ID = @cashier 
+                              AND SHIFT_NUM = @shift 
+                              AND TRANS_DATE = @date 
+                              AND STATION_NUM = @station";
+
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
+            {
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@cashier", currentCashierId);
+                    cmd.Parameters.AddWithValue("@shift", currentShift);
+                    cmd.Parameters.AddWithValue("@date", currentTransDate.Date);
+                    cmd.Parameters.AddWithValue("@station", currentStation);
+
+                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            transactionCount = Convert.IsDBNull(reader["TotalTransactions"]) ? 0 : Convert.ToInt32(reader["TotalTransactions"]);
+                            shiftTotalSales = Convert.IsDBNull(reader["TotalSales"]) ? 0m : Convert.ToDecimal(reader["TotalSales"]);
+
+                            vatableGross = Convert.IsDBNull(reader["VatableGross"]) ? 0m : Convert.ToDecimal(reader["VatableGross"]);
+                            vatExemptGross = Convert.IsDBNull(reader["VatExemptGross"]) ? 0m : Convert.ToDecimal(reader["VatExemptGross"]);
+                        }
+                    }
+                }
+            }
+
+            // Calculate the 12% VAT Breakdown
+            decimal vatableSales = Math.Round(vatableGross / 1.12m, 2, MidpointRounding.AwayFromZero);
+            decimal vatAmount = vatableGross - vatableSales;
+
+            // Pass the calculated totals to our print method
+            PrintXReading(shiftTotalSales, transactionCount, vatableSales, vatAmount, vatExemptGross);
+        }
+
+        private void PrintXReading(decimal totalSales, int transactionCount, decimal vatableSales, decimal vatAmount, decimal vatExempt)
+        {
+            PrintDocument printDoc = new PrintDocument();
+            printDoc.PrintPage += (sender, e) =>
+            {
+                Graphics g = e.Graphics;
+                Font fontRegular = new Font("Courier New", 8);
+                Font fontBold = new Font("Courier New", 10, FontStyle.Bold);
+                Brush brush = Brushes.Black;
+
+                float yPos = 10;
+                float leftMargin = 5;
+                float centerMargin = 140;
+                float rightMargin = 280;
+
+                StringFormat centerAlign = new StringFormat() { Alignment = StringAlignment.Center };
+                StringFormat rightAlign = new StringFormat() { Alignment = StringAlignment.Far };
+
+                // --- X-READING HEADER ---
+                g.DrawString("X-READING (SHIFT REPORT)", fontBold, brush, centerMargin, yPos, centerAlign);
+                yPos += 25;
+                g.DrawString($"Date:    {currentTransDate.ToString("MM/dd/yyyy")}", fontRegular, brush, leftMargin, yPos);
+                yPos += 15;
+                g.DrawString($"Cashier: {currentCashier}", fontRegular, brush, leftMargin, yPos);
+                yPos += 15;
+                g.DrawString($"Shift:   {currentShift}   Station: {currentStation}", fontRegular, brush, leftMargin, yPos);
+                yPos += 20;
+                g.DrawString(new string('-', 38), fontRegular, brush, leftMargin, yPos);
+                yPos += 20;
+
+                // --- MATH CALCULATION ---
+                decimal expectedCash = currentChangeFunds + totalSales;
+
+                g.DrawString("Starting Change Fund:", fontRegular, brush, leftMargin, yPos);
+                g.DrawString(currentChangeFunds.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+                yPos += 15;
+
+                g.DrawString("Shift Gross Sales:", fontRegular, brush, leftMargin, yPos);
+                g.DrawString(totalSales.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+                yPos += 15;
+
+                g.DrawString("Total Transactions:", fontRegular, brush, leftMargin, yPos);
+                g.DrawString(transactionCount.ToString(), fontRegular, brush, rightMargin, yPos, rightAlign);
+                yPos += 20;
+                g.DrawString(new string('-', 38), fontRegular, brush, leftMargin, yPos);
+                yPos += 20;
+
+                // --- EXPECTED CASH ---
+                g.DrawString("EXPECTED CASH IN DRAWER:", fontBold, brush, leftMargin, yPos);
+                yPos += 15;
+                g.DrawString(expectedCash.ToString("N2"), fontBold, brush, rightMargin, yPos, rightAlign);
+                yPos += 25;
+
+                // --- VAT BREAKDOWN ---
+                g.DrawString(new string('-', 15), fontRegular, brush, centerMargin, yPos, centerAlign);
+                yPos += 10;
+                g.DrawString("VAT BREAKDOWN", fontBold, brush, centerMargin, yPos, centerAlign);
+                yPos += 20;
+
+                g.DrawString("VATable Sales:", fontRegular, brush, leftMargin, yPos);
+                g.DrawString(vatableSales.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+                yPos += 15;
+
+                g.DrawString("VAT (12%):", fontRegular, brush, leftMargin, yPos);
+                g.DrawString(vatAmount.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+                yPos += 15;
+
+                g.DrawString("VAT Exempt Sales:", fontRegular, brush, leftMargin, yPos);
+                g.DrawString(vatExempt.ToString("N2"), fontRegular, brush, rightMargin, yPos, rightAlign);
+                yPos += 25;
+
+                g.DrawString("END OF REPORT", fontBold, brush, centerMargin, yPos, centerAlign);
+            };
+
+            PrintPreviewDialog previewDialog = new PrintPreviewDialog { Document = printDoc, Width = 400, Height = 600 };
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            previewDialog.ShowDialog(this);
+            this.TopMost = wasTopMost;
+
+            this.Close();
+        }
+
+
 
         private void SuspendTransaction()
         {
