@@ -159,7 +159,7 @@ namespace EnchantedPOS
             };
 
             Button btnReg = new Button() { Text = "Regular Price", Top = 20, Left = 35, Width = 160, DialogResult = DialogResult.Yes };
-            Button btnWholesale = new Button() { Text = "Wholesale", Top = 60, Left = 35, Width = 160, DialogResult = DialogResult.No};
+            Button btnWholesale = new Button() { Text = "Wholesale", Top = 60, Left = 35, Width = 160, DialogResult = DialogResult.No };
             Button btnVIP = new Button() { Text = "VIP (B)", Top = 100, Left = 35, Width = 160, DialogResult = DialogResult.OK };
             Button btnRoyal = new Button() { Text = "Royal (C)", Top = 140, Left = 35, Width = 160, DialogResult = DialogResult.Ignore };
             Button btnCancel = new Button() { Text = "Cancel", Top = 180, Left = 35, Width = 160, DialogResult = DialogResult.Cancel };
@@ -181,39 +181,241 @@ namespace EnchantedPOS
             return null;
         }
 
-        private bool CheckGlobalPassword()
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            string globalPassword = "1"; //Global Password
-
-            Form prompt = new Form()
+            if (keyData == Keys.F10)
             {
-                Width = 300,
-                Height = 160,
+                SuspendTransaction();
+                return true; 
+            }
+            else if (keyData == Keys.F11)
+            {
+                RecallTransaction();
+                return true;
+            }
+
+            // Let all other normal keys (like typing barcodes) pass through normally
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private void SuspendTransaction()
+        {
+            if (dataGridView1.Rows.Count == 0)
+            {
+                MessageBox.Show("Cart is empty. Nothing to suspend.", "Empty Cart", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string holdName = PromptForHoldName();
+
+            if (holdName == null) return;
+
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
+            {
+                long newHoldId = 0;
+
+                string headerQuery = "INSERT INTO SUSPENDED_ORDERS (HOLD_NAME, CASHIER_NAME, HOLD_TIME) VALUES (@holdName, @cashier, NOW()); SELECT LAST_INSERT_ID();";
+
+                using (MySqlCommand headerCmd = new MySqlCommand(headerQuery, con))
+                {
+                    headerCmd.Parameters.AddWithValue("@holdName", holdName);
+                    headerCmd.Parameters.AddWithValue("@cashier", currentCashier); // Using your global cashier variable
+                    newHoldId = Convert.ToInt64(headerCmd.ExecuteScalar());
+                }
+
+                string itemQuery = "INSERT INTO SUSPENDED_ITEMS (HOLD_ID, BARCODE, PROD_NAME, QTY, PRICE, AMNT, DISC, REGPRICE, NON_VAT) VALUES (@holdId, @barcode, @name, @qty, @price, @amnt, @disc, @regprice, @nonVat)";
+                using (MySqlCommand itemCmd = new MySqlCommand(itemQuery, con))
+                {
+                    foreach (DataGridViewRow row in dataGridView1.Rows)
+                    {
+                        if (row.IsNewRow) continue;
+
+                        itemCmd.Parameters.Clear();
+                        itemCmd.Parameters.AddWithValue("@holdId", newHoldId);
+
+                        itemCmd.Parameters.AddWithValue("@barcode", row.Cells["barcode"].Value?.ToString());
+                        itemCmd.Parameters.AddWithValue("@name", row.Cells["prod_name"].Value?.ToString());
+
+                        itemCmd.Parameters.AddWithValue("@qty", Convert.ToDecimal(row.Cells["quantity"].Value ?? 0));
+                        itemCmd.Parameters.AddWithValue("@price", Convert.ToDecimal(row.Cells["price"].Value ?? 0));
+                        itemCmd.Parameters.AddWithValue("@amnt", Convert.ToDecimal(row.Cells["amnt"].Value ?? 0));
+
+                        // Stripping the % sign!
+                        string rawDisc = row.Cells["disc"].Value?.ToString().Replace("%", "").Trim() ?? "0";
+                        itemCmd.Parameters.AddWithValue("@disc", Convert.ToDecimal(rawDisc));
+
+                        itemCmd.Parameters.AddWithValue("@regprice", Convert.ToDecimal(row.Cells["regprice"].Value ?? 0));
+                        itemCmd.Parameters.AddWithValue("@nonVat", Convert.ToBoolean(row.Cells["colNonVat"].Value ?? false));
+
+                        itemCmd.ExecuteNonQuery();
+                    }
+                }
+            }
+
+            dataGridView1.Rows.Clear();
+            ClearTempRegister();
+            UpdateTotalAmount();
+
+            MessageBox.Show($"'{holdName}' suspended successfully!", "Suspended", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            txtBarcode.Focus();
+        }
+
+        private void RecallTransaction()
+        {
+            if (dataGridView1.Rows.Count > 0 && !dataGridView1.Rows[0].IsNewRow)
+            {
+                MessageBox.Show("Please finish, void, or suspend the current transaction before recalling another cart.", "Cart Not Empty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            DataTable dtHolds = new DataTable();
+            string loadQuery = "SELECT HOLD_ID AS 'Hold ID', HOLD_NAME AS 'Name', CASHIER_NAME AS 'Cashier', HOLD_TIME AS 'Time' FROM SUSPENDED_ORDERS ORDER BY HOLD_TIME DESC";
+
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
+            {
+                using (MySqlDataAdapter da = new MySqlDataAdapter(loadQuery, con))
+                {
+                    da.Fill(dtHolds);
+                }
+            }
+
+            if (dtHolds.Rows.Count == 0)
+            {
+                MessageBox.Show("There are currently no suspended transactions.", "Empty", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            Form recallForm = new Form()
+            {
+                Width = 600,
+                Height = 400,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Manager Overide",
+                Text = "Recall Suspended Transaction",
                 StartPosition = FormStartPosition.CenterScreen,
                 MinimizeBox = false,
                 MaximizeBox = false
             };
 
-            Label txtPassLabel = new Label() { Left = 20, Top = 20, Text = "Enter Password: " };
-            TextBox inputBox = new TextBox() { Left = 20, Top = 45, Width = 240, PasswordChar = '*' };
-            Button confirmation = new Button() { Text = "OK", Left = 160, Width = 100, Top = 80, DialogResult = DialogResult.OK };
-            Button cancel = new Button() { Text = "Cancel", Left = 50, Width = 100, Top = 80, DialogResult = DialogResult.Cancel };
+            DataGridView dgvHolds = new DataGridView()
+            {
+                Top = 20,
+                Left = 20,
+                Width = 540,
+                Height = 270,
+                AllowUserToAddRows = false,
+                ReadOnly = true,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                DataSource = dtHolds // Bind the data we just pulled!
+            };
 
-            prompt.Controls.Add(txtPassLabel);
+            Button btnRecall = new Button() { Text = "Recall", Left = 360, Top = 310, Width = 100, DialogResult = DialogResult.OK };
+            Button btnCancel = new Button() { Text = "Cancel", Left = 470, Top = 310, Width = 100, DialogResult = DialogResult.Cancel };
+
+            recallForm.Controls.Add(dgvHolds);
+            recallForm.Controls.Add(btnRecall);
+            recallForm.Controls.Add(btnCancel);
+            recallForm.AcceptButton = btnRecall;
+
+            if (recallForm.ShowDialog() == DialogResult.OK)
+            {
+                if (dgvHolds.CurrentRow == null) return;
+
+                string selectedHoldId = dgvHolds.CurrentRow.Cells["Hold ID"].Value.ToString();
+
+                using (MySqlConnection con = DatabaseConfig.GetConnection())
+                {
+                    // Pull the specific grocery items for this cart
+                    string itemQuery = "SELECT * FROM SUSPENDED_ITEMS WHERE HOLD_ID = @holdId";
+                    using (MySqlCommand cmd = new MySqlCommand(itemQuery, con))
+                    {
+                        cmd.Parameters.AddWithValue("@holdId", selectedHoldId);
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string barcode = reader["BARCODE"].ToString();
+                                string name = reader["PROD_NAME"].ToString();
+                                decimal qty = Convert.ToDecimal(reader["QTY"]);
+                                decimal price = Convert.ToDecimal(reader["PRICE"]);
+                                decimal amnt = Convert.ToDecimal(reader["AMNT"]);
+                                string disc = reader["DISC"].ToString() + "%"; // Re-attach the percent sign for the UI
+                                decimal regprice = Convert.ToDecimal(reader["REGPRICE"]);
+                                bool nonVat = Convert.ToBoolean(reader["NON_VAT"]);
+
+                                // Push directly into the UI grid
+                                dataGridView1.Rows.Add(
+                                    barcode, name, qty.ToString("0.###"), price.ToString("F2"),
+                                    amnt.ToString("F2"), disc, regprice.ToString("F2"), nonVat
+                                );
+
+                                // Push directly into the TEMP_REGISTER so it survives a power outage
+                                SaveToTempRegister(barcode, name, "", qty, price, amnt, nonVat);
+                            }
+                        }
+                    }
+
+                    // Delete the cart from the suspension tables since it is now active again
+                    string deleteQuery = "DELETE FROM SUSPENDED_ORDERS WHERE HOLD_ID = @holdId; DELETE FROM SUSPENDED_ITEMS WHERE HOLD_ID = @holdId;";
+                    using (MySqlCommand delCmd = new MySqlCommand(deleteQuery, con))
+                    {
+                        delCmd.Parameters.AddWithValue("@holdId", selectedHoldId);
+                        delCmd.ExecuteNonQuery();
+                    }
+                }
+
+                UpdateTotalAmount();
+                txtBarcode.Focus();
+            }
+        }
+
+        private string PromptForHoldName()
+        {
+            Form prompt = new Form()
+            {
+                Width = 350,
+                Height = 160,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Suspend Transaction",
+                StartPosition = FormStartPosition.CenterScreen,
+                MinimizeBox = false,
+                MaximizeBox = false
+            };
+
+            Label txtLabel = new Label() { Left = 20, Top = 20, Text = "Enter a name or note for this suspended cart:", Width = 300 };
+            TextBox inputBox = new TextBox() { Left = 20, Top = 45, Width = 290 };
+
+
+            Button confirmation = new Button() { Text = "Save", Left = 180, Width = 100, Top = 80 };
+            Button cancel = new Button() { Text = "Cancel", Left = 60, Width = 100, Top = 80, DialogResult = DialogResult.Cancel };
+
+
+            confirmation.Click += (sender, e) =>
+            {
+                if (string.IsNullOrWhiteSpace(inputBox.Text))
+                {
+                    MessageBox.Show("Please enter a name to identify this suspended transaction.", "Name Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    inputBox.Focus();
+                }
+                else
+                {
+                    prompt.DialogResult = DialogResult.OK;
+                    prompt.Close();
+                }
+            };
+
+            prompt.Controls.Add(txtLabel);
             prompt.Controls.Add(inputBox);
             prompt.Controls.Add(confirmation);
             prompt.Controls.Add(cancel);
-            prompt.AcceptButton = confirmation; // Pressing Enter clicks OK
+            prompt.AcceptButton = confirmation;
 
-            // Show the prompt. If they click OK, check if the password matches.
             if (prompt.ShowDialog() == DialogResult.OK)
             {
-                return inputBox.Text == globalPassword;
+                return inputBox.Text.Trim();
             }
 
-            return false; // They clicked Cancel or closed the window
+            return null;
         }
 
 
@@ -261,6 +463,78 @@ namespace EnchantedPOS
             // dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
         }
+
+
+
+        private bool CheckGlobalPassword()
+
+        {
+
+            string globalPassword = "1"; //Global Password
+
+
+
+            Form prompt = new Form()
+
+            {
+
+                Width = 300,
+
+                Height = 160,
+
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+
+                Text = "Manager Overide",
+
+                StartPosition = FormStartPosition.CenterScreen,
+
+                MinimizeBox = false,
+
+                MaximizeBox = false
+
+            };
+
+
+
+            Label txtPassLabel = new Label() { Left = 20, Top = 20, Text = "Enter Password: " };
+
+            TextBox inputBox = new TextBox() { Left = 20, Top = 45, Width = 240, PasswordChar = '*' };
+
+            Button confirmation = new Button() { Text = "OK", Left = 160, Width = 100, Top = 80, DialogResult = DialogResult.OK };
+
+            Button cancel = new Button() { Text = "Cancel", Left = 50, Width = 100, Top = 80, DialogResult = DialogResult.Cancel };
+
+
+
+            prompt.Controls.Add(txtPassLabel);
+
+            prompt.Controls.Add(inputBox);
+
+            prompt.Controls.Add(confirmation);
+
+            prompt.Controls.Add(cancel);
+
+            prompt.AcceptButton = confirmation; // Pressing Enter clicks OK
+
+
+
+            // Show the prompt. If they click OK, check if the password matches.
+
+            if (prompt.ShowDialog() == DialogResult.OK)
+
+            {
+
+                return inputBox.Text == globalPassword;
+
+            }
+
+
+
+            return false; // They clicked Cancel or closed the window
+
+        }
+
+
 
         private void PromptEditOrVoid()
         {
@@ -408,6 +682,8 @@ namespace EnchantedPOS
                 MessageBox.Show("Error reading total amount.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+
 
         private void formPOS_KeyDown(object sender, KeyEventArgs e)
         {
