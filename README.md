@@ -1,36 +1,81 @@
-**EnchantedPOS 🛒✨**
+**EnchantedPOS 🛒**
+A robust, multi-terminal Point of Sale (POS) and Inventory Management system built with C# (Windows Forms) and MySQL. Designed specifically for fast-paced grocery and retail environments, EnchantedPOS ensures quick checkouts, strict cashier accountability, and accurate inventory tracking.
 
-A robust, fast-paced Point of Sale (POS) system built with C# and Windows Forms. Designed for high-volume retail environments and 24-hour continuous store operations, EnchantedPOS focuses on reliability, rapid checkout workflows, and seamless crash recovery.
+**🚀 Major Update:** EnchantedPOS has officially migrated its database backend from MS Access to MySQL! This upgrade enables true multi-terminal networking, faster transaction processing, and enhanced data security across the local network.
 
-**Key Features**
-Real-Time Crash Recovery: Utilizes a TEMP_REGISTER database to save transactions per item scan. If a terminal loses power or reboots, the active transaction and its invoice number are automatically restored upon the cashier's next login.
+**✨ Key Features**
+💻 Point of Sale (Checkout)
+Fast-Paced Scanning: Seamless barcode scanning with automatic parsing for scale/weighed items (e.g., meats and produce).
 
-Multi-Station Architecture: Supports multiple checkout counters simultaneously without cross-talk by binding transactions to specific local station numbers.
+Suspend & Recall (F10 / F11): Instantly park an active cart with a custom name/note to keep the line moving, and recall it when the customer is ready.
 
-Dual-Language Product Search: Features a dynamic search interface allowing cashiers to look up items seamlessly using either English or Korean product names (ENG_NAME / KOR_NAME), perfect for international or specialty grocery inventories.
+Crash Recovery: Transactions are logged to a TEMP_REGISTER in real-time. If the PC loses power, the exact cart is recovered automatically upon reboot.
 
-Smart Pricing Tiers: Built-in toggle modes (Regular, Wholesale, VIP, Royal) that automatically adjust the SRP of scanned items on the fly.
+Dynamic Pricing Tiers: Easily toggle between Regular, Wholesale, VIP, and Royal pricing with manager override support.
 
-Rapid Keyboard Navigation: Optimized for mouse-free checkout lines using hotkeys (Enter to scan/search, ESC for discounts, '/' for quantity adjustments, and F3 for edits/voids).
+📊 Shift & Cash Management
+X-Readings (F12): Generate end-of-shift reports tracking total transactions, starting change funds, and expected cash-in-drawer.
 
-Manager Overrides: Secure, password-protected intercept screens for sensitive actions like voiding entire transactions or manually overriding computed discounts.
+Tax Compliance: Automated BIR-ready VAT breakdown calculation on printed receipts (VATable, 12% VAT, VAT Exempt, and Zero-Rated sales).
 
-Shift & Fund Tracking: Captures the active cashier ID, current shift number, and starting change funds right at login for accurate end-of-day auditing.
+Hardware Integration: Built-in receipt printer routing and preview dialogs.
 
-**Tech Stack**
+**📦 Back-Office & File Maintenance**
+Multi-Terminal Support: Centralized MySQL database with dynamic connection strings via App.config for Host and Remote terminals.
+
+**Inventory Master:** Comprehensive product tracking with bi-directional markup/margin calculations.
+
+**Entity Management:** Built-in CRUD modules for Cashiers (Role-Based Access), Suppliers, and Customers (Ready for Sales on Account).
+
+**🛠️ Tech Stack**
 Frontend: C# / .NET Windows Forms (WinForms)
 
-Database: Microsoft Access (.accdb) using ADO.NET (OleDbConnection)
+**Database:** MySQL Server 8.0+
 
-Architecture: Local client database integration with dynamic query generation and parameter binding.
+**Configuration:** XML-based App.config for dynamic network routing
 
-**Setup Instructions**
+**🚀 Installation & Setup**
+1. Database Configuration
+Install MySQL Server and MySQL Workbench.
+
+Create a new schema named EnchantedPOS.
+
+Execute the provided SQL migration scripts (located in /Database) to build the Master, Register, Suspend, and User tables.
+
+If setting up a multi-terminal network, ensure your host machine's firewall allows inbound TCP traffic on port 3306, and update your MySQL my.ini to bind-address = 0.0.0.0.
+
+2. Application Setup
 Clone this repository to your local machine.
 
-Ensure you have the Microsoft Access Database Engine (OLEDB 12.0) installed on your system.
+Open the solution in Visual Studio.
 
-Open the .sln file in Visual Studio.
+Open the App.config file and update the connection string to point to your MySQL instance:
 
-Verify the database (dbEn.accdb) is placed in the root directory relative to the compiled executable (typically three folders up from the bin/Debug output).
+XML
+<connectionStrings>
+  <add name="DefaultConnection" 
+       connectionString="Server=localhost;Database=EnchantedPOS;Uid=root;Pwd=YourPassword;" 
+       providerName="MySql.Data.MySqlClient" />
+</connectionStrings>
+(Note: For remote terminals, change Server=localhost to the host computer's static IPv4 address, e.g., Server=192.168.100.151)
 
-Build and run the solution.
+Build and Run!
+
+⌨️ Keyboard Shortcuts
+F1: Return focus to Barcode Scanner
+
+F2: Initiate Payment
+
+F3: Edit/Void Transaction (Manager Override required)
+
+F10: Suspend Cart (Park Transaction)
+
+F11: Recall Suspended Cart
+
+F12: End Shift / Print X-Reading
+
+ESC: Select Discount Type
+
+DEL: Remove Selected Item
+
+/ (Divide): Edit Item Quantity
