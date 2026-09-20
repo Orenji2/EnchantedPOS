@@ -35,12 +35,14 @@
             btnFileMaintenance = new Button();
             btnDashboard = new Button();
             panelWorkspace = new Panel();
+            btnSupplierInvoiceEntry = new Button();
             panelSidebar.SuspendLayout();
             SuspendLayout();
             // 
             // panelSidebar
             // 
             panelSidebar.BackColor = Color.DimGray;
+            panelSidebar.Controls.Add(btnSupplierInvoiceEntry);
             panelSidebar.Controls.Add(button1);
             panelSidebar.Controls.Add(button3);
             panelSidebar.Controls.Add(btnProductMasterFile);
@@ -128,6 +130,20 @@
             panelWorkspace.Size = new Size(756, 721);
             panelWorkspace.TabIndex = 1;
             // 
+            // btnSupplierInvoiceEntry
+            // 
+            btnSupplierInvoiceEntry.Dock = DockStyle.Top;
+            btnSupplierInvoiceEntry.FlatAppearance.BorderSize = 0;
+            btnSupplierInvoiceEntry.FlatStyle = FlatStyle.Flat;
+            btnSupplierInvoiceEntry.ForeColor = Color.White;
+            btnSupplierInvoiceEntry.Location = new Point(0, 250);
+            btnSupplierInvoiceEntry.Name = "btnSupplierInvoiceEntry";
+            btnSupplierInvoiceEntry.Size = new Size(250, 50);
+            btnSupplierInvoiceEntry.TabIndex = 5;
+            btnSupplierInvoiceEntry.Text = "SUPPLIER INVOICE ENTRY";
+            btnSupplierInvoiceEntry.UseVisualStyleBackColor = true;
+            btnSupplierInvoiceEntry.Click += btnSupplierInvoiceEntry_Click;
+            // 
             // formAdminDashboard
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -153,5 +169,6 @@
         private Button btnDashboard;
         private Panel panelWorkspace;
         private Button button1;
+        private Button btnSupplierInvoiceEntry;
     }
 }

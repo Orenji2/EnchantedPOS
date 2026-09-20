@@ -58,5 +58,11 @@ namespace EnchantedPOS
             ucFileMaintenance fileMaintenanceScreen = new ucFileMaintenance();
             LoadModule(fileMaintenanceScreen);
         }
+
+        private void btnSupplierInvoiceEntry_Click(object sender, EventArgs e)
+        {
+            ucSuppplierInvoice suppplierInvoiceScreen = new ucSuppplierInvoice();
+            LoadModule(suppplierInvoiceScreen);
+        }
     }
 }
