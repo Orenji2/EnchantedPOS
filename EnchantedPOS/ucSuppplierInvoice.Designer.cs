@@ -267,6 +267,7 @@
             btnCancel.TabIndex = 2;
             btnCancel.Text = "CANCEL";
             btnCancel.UseVisualStyleBackColor = true;
+            btnCancel.Click += btnCancel_Click;
             // 
             // btnSave
             // 
@@ -276,6 +277,7 @@
             btnSave.TabIndex = 1;
             btnSave.Text = "SAVE";
             btnSave.UseVisualStyleBackColor = true;
+            btnSave.Click += btnSave_Click;
             // 
             // btnAdd
             // 
@@ -285,6 +287,7 @@
             btnAdd.TabIndex = 0;
             btnAdd.Text = "ADD";
             btnAdd.UseVisualStyleBackColor = true;
+            btnAdd.Click += btnAdd_Click;
             // 
             // panel1
             // 
