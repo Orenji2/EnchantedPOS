@@ -14,6 +14,7 @@ namespace EnchantedPOS
         public ucInventoryAdjustment()
         {
             InitializeComponent();
+            LoadAdjustmentHistory();
         }
 
         private void txtBarcode_KeyDown(object sender, KeyEventArgs e)
@@ -106,6 +107,9 @@ namespace EnchantedPOS
 
                         transaction.Commit();
                         MessageBox.Show("Inventory successfully adjusted.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                        LoadAdjustmentHistory();
+
                         txtBarcode.Clear();
                         txtProdName.Clear();
                         txtStock.Clear();
@@ -120,6 +124,29 @@ namespace EnchantedPOS
                         MessageBox.Show("Failed to adjust inventory: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
+            }
+        }
+
+        private void LoadAdjustmentHistory()
+        {
+            try
+            {
+                string query = "SELECT ADJ_DATE, BARCODE, PROD_NAME, ADJ_QTY, ADJ_TYPE, REMARKS, ADJUSTED_BY FROM INVENTORY_ADJUSTMENTS ORDER BY ADJ_DATE DESC LIMIT 50";
+
+                using (MySqlConnection con = DatabaseConfig.GetConnection())
+                {
+                    using (MySqlDataAdapter da = new MySqlDataAdapter(query, con))
+                    {
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+
+                        dgvRecentAdjustments.DataSource = dt;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading adjustment history: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

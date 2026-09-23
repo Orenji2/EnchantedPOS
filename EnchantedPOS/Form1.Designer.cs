@@ -50,7 +50,7 @@
             lblName.AutoSize = true;
             lblName.BackColor = Color.Transparent;
             lblName.Font = new Font("Segoe UI Black", 20.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            lblName.ForeColor = SystemColors.ControlLightLight;
+            lblName.ForeColor = Color.MediumBlue;
             lblName.Location = new Point(31, 123);
             lblName.Name = "lblName";
             lblName.Size = new Size(317, 46);
@@ -77,7 +77,7 @@
             gbPOSLogin.Controls.Add(btnLogIn);
             gbPOSLogin.Controls.Add(pictureBox1);
             gbPOSLogin.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            gbPOSLogin.ForeColor = SystemColors.ControlLightLight;
+            gbPOSLogin.ForeColor = Color.DarkBlue;
             gbPOSLogin.Location = new Point(59, 15);
             gbPOSLogin.Margin = new Padding(3, 4, 3, 4);
             gbPOSLogin.Name = "gbPOSLogin";
@@ -89,7 +89,6 @@
             // 
             // btnLogOut
             // 
-            btnLogOut.Enabled = false;
             btnLogOut.ForeColor = SystemColors.ActiveCaptionText;
             btnLogOut.Location = new Point(320, 221);
             btnLogOut.Margin = new Padding(3, 4, 3, 4);
@@ -102,10 +101,10 @@
             // 
             // txtC_Pass
             // 
-            txtC_Pass.Location = new Point(174, 85);
+            txtC_Pass.Location = new Point(181, 85);
             txtC_Pass.Margin = new Padding(3, 4, 3, 4);
             txtC_Pass.Name = "txtC_Pass";
-            txtC_Pass.Size = new Size(250, 29);
+            txtC_Pass.Size = new Size(243, 29);
             txtC_Pass.TabIndex = 3;
             txtC_Pass.UseSystemPasswordChar = true;
             txtC_Pass.KeyDown += txtC_Pass_KeyDown;
@@ -113,8 +112,8 @@
             // lblCashierPass
             // 
             lblCashierPass.AutoSize = true;
-            lblCashierPass.ForeColor = SystemColors.ControlLightLight;
-            lblCashierPass.Location = new Point(174, 49);
+            lblCashierPass.ForeColor = Color.DarkBlue;
+            lblCashierPass.Location = new Point(181, 45);
             lblCashierPass.Name = "lblCashierPass";
             lblCashierPass.Size = new Size(154, 23);
             lblCashierPass.TabIndex = 2;
@@ -125,10 +124,10 @@
             btnLogIn.BackColor = Color.ForestGreen;
             btnLogIn.FlatStyle = FlatStyle.Flat;
             btnLogIn.ForeColor = SystemColors.ControlLightLight;
-            btnLogIn.Location = new Point(174, 136);
+            btnLogIn.Location = new Point(181, 136);
             btnLogIn.Margin = new Padding(3, 4, 3, 4);
             btnLogIn.Name = "btnLogIn";
-            btnLogIn.Size = new Size(250, 77);
+            btnLogIn.Size = new Size(243, 77);
             btnLogIn.TabIndex = 4;
             btnLogIn.Text = "LOG IN";
             btnLogIn.UseVisualStyleBackColor = false;
@@ -136,15 +135,21 @@
             // 
             // pictureBox1
             // 
+            pictureBox1.ErrorImage = Properties.Resources.blank_avatar;
+            pictureBox1.Image = Properties.Resources.blank_avatar;
+            pictureBox1.InitialImage = Properties.Resources.blank_avatar;
             pictureBox1.Location = new Point(7, 29);
             pictureBox1.Margin = new Padding(3, 4, 3, 4);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(160, 184);
+            pictureBox1.Size = new Size(168, 184);
+            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
             // 
             // btnAdmin
             // 
+            btnAdmin.BackColor = Color.Teal;
+            btnAdmin.ForeColor = SystemColors.ControlLight;
             btnAdmin.Location = new Point(959, 549);
             btnAdmin.Margin = new Padding(3, 4, 3, 4);
             btnAdmin.Name = "btnAdmin";
@@ -152,11 +157,15 @@
             btnAdmin.TabIndex = 2;
             btnAdmin.Text = "Admin Menu";
             btnAdmin.TextAlign = ContentAlignment.BottomCenter;
-            btnAdmin.UseVisualStyleBackColor = true;
+            btnAdmin.UseVisualStyleBackColor = false;
             btnAdmin.Click += btnAdmin_Click;
             // 
             // btnReports
             // 
+            btnReports.BackColor = Color.Navy;
+            btnReports.FlatStyle = FlatStyle.Flat;
+            btnReports.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnReports.ForeColor = Color.White;
             btnReports.Location = new Point(959, 294);
             btnReports.Margin = new Padding(3, 4, 3, 4);
             btnReports.Name = "btnReports";
@@ -164,15 +173,18 @@
             btnReports.TabIndex = 1;
             btnReports.Text = "Reports";
             btnReports.TextAlign = ContentAlignment.BottomCenter;
-            btnReports.UseVisualStyleBackColor = true;
+            btnReports.UseVisualStyleBackColor = false;
             btnReports.Click += btnReports_Click;
             // 
             // btnPOS
             // 
-            btnPOS.BackColor = Color.Transparent;
+            btnPOS.BackColor = Color.ForestGreen;
             btnPOS.BackgroundImage = Properties.Resources.cashier__3_;
-            btnPOS.BackgroundImageLayout = ImageLayout.Zoom;
-            btnPOS.Location = new Point(959, 48);
+            btnPOS.BackgroundImageLayout = ImageLayout.Stretch;
+            btnPOS.FlatStyle = FlatStyle.Flat;
+            btnPOS.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnPOS.ForeColor = SystemColors.Control;
+            btnPOS.Location = new Point(959, 65);
             btnPOS.Margin = new Padding(3, 4, 3, 4);
             btnPOS.Name = "btnPOS";
             btnPOS.Size = new Size(196, 221);
@@ -186,6 +198,7 @@
             // 
             panelPOSLogin.BackColor = Color.Transparent;
             panelPOSLogin.Controls.Add(gbPOSLogin);
+            panelPOSLogin.ForeColor = SystemColors.Highlight;
             panelPOSLogin.Location = new Point(346, 203);
             panelPOSLogin.Name = "panelPOSLogin";
             panelPOSLogin.Size = new Size(591, 389);
@@ -196,8 +209,7 @@
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            BackColor = SystemColors.Control;
-            BackgroundImage = Properties.Resources._2788686;
+            BackColor = Color.White;
             BackgroundImageLayout = ImageLayout.None;
             ClientSize = new Size(1264, 848);
             Controls.Add(panelPOSLogin);

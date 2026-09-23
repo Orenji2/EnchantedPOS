@@ -64,5 +64,11 @@ namespace EnchantedPOS
             ucSuppplierInvoice suppplierInvoiceScreen = new ucSuppplierInvoice();
             LoadModule(suppplierInvoiceScreen);
         }
+
+        private void btnInventoryManagement_Click(object sender, EventArgs e)
+        {
+            ucInventoryAdjustment adjustment = new ucInventoryAdjustment();
+            LoadModule(adjustment);
+        }
     }
 }

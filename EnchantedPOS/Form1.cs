@@ -17,6 +17,8 @@ namespace EnchantedPOS
 
         public static bool boolLoginStatus;
 
+        private bool isLogingIn;
+
 
         public Form1(bool boolLogin = false)
         {
@@ -332,11 +334,7 @@ namespace EnchantedPOS
                 return;
             }
 
-            panelPOSLogin.Visible = true;
-
-            btnPOS.Visible = false;
-            btnReports.Visible = false;
-            btnAdmin.Visible = false;
+            loginPanel(true);
 
             txtC_Pass.Clear();
             txtC_Pass.Enabled = true;
@@ -344,12 +342,39 @@ namespace EnchantedPOS
             txtC_Pass.Select();
         }
 
+        private void loginPanel(bool isLoging)
+        {
+            panelPOSLogin.Visible = isLoging;
+
+            btnPOS.Visible = !isLoging;
+            btnReports.Visible = !isLoging;
+            btnAdmin.Visible = !isLoging;
+        }
+
         private void btnLogOut_Click(object sender, EventArgs e)
         {
-            panelPOSLogin.Visible = false;
-            btnPOS.Visible = true;
-            btnReports.Visible = true;
-            btnAdmin.Visible = true;
+            loginPanel(false);
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // Secret trigger to open the unlogged inventory mode
+            if (keyData == (Keys.Control | Keys.Shift | Keys.I))
+            {
+
+                if (CheckAdminPassword())
+                {
+                    using (formInventoryMode invMode = new formInventoryMode())
+                    {
+                        invMode.ShowDialog(this);
+                    }
+                }
+
+                
+                return true;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         private void btnAdmin_Click(object sender, EventArgs e)

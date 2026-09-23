@@ -392,6 +392,7 @@
             btnSoA.TabIndex = 4;
             btnSoA.Text = "Sales on Account";
             btnSoA.UseVisualStyleBackColor = true;
+            btnSoA.Click += btnSoA_Click;
             // 
             // btnGC
             // 

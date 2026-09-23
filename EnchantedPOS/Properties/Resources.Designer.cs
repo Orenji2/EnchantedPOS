@@ -73,6 +73,16 @@ namespace EnchantedPOS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap blank_avatar {
+            get {
+                object obj = ResourceManager.GetObject("blank_avatar", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap cashier {
             get {
                 object obj = ResourceManager.GetObject("cashier", resourceCulture);

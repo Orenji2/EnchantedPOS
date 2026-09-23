@@ -12,6 +12,10 @@ namespace EnchantedPOS
     public partial class formSaveTransaction : Form
     {
 
+        public string SelectedPaymentMethod { get; private set; } = "CASH";
+        public int? SelectedCustomerID { get; private set; } = null;
+        public string SelectedCustomerName { get; private set; } = "";
+
         public decimal FinalNetAmount { get; private set; }
         public decimal FinalReceivedAmount { get; private set; }
         public decimal FinalChangeAmount { get; private set; }
@@ -36,26 +40,74 @@ namespace EnchantedPOS
             txtNetAmount.Text = FinalNetAmount.ToString("N2");
         }
 
-        
+        private bool PromptForCustomer()
+        {
+            Form prompt = new Form()
+            {
+                Width = 350,
+                Height = 180,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Select Customer Account",
+                StartPosition = FormStartPosition.CenterParent,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            Label lbl = new Label() { Left = 20, Top = 20, Text = "Select Customer:" };
+            ComboBox cmbCustomers = new ComboBox() { Left = 20, Top = 45, Width = 290, DropDownStyle = ComboBoxStyle.DropDownList };
+            Button btnOK = new Button() { Text = "Charge Account", Left = 160, Width = 150, Top = 90, DialogResult = DialogResult.OK };
+            Button btnCancel = new Button() { Text = "Cancel", Left = 20, Width = 100, Top = 90, DialogResult = DialogResult.Cancel };
+
+            prompt.Controls.Add(lbl); prompt.Controls.Add(cmbCustomers);
+            prompt.Controls.Add(btnOK); prompt.Controls.Add(btnCancel);
+            prompt.AcceptButton = btnOK;
+
+            // Fetch customers from your database
+            string query = "SELECT CUST_ID, CUST_NAME FROM CUSTOMER_MAST ORDER BY CUST_NAME ASC";
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
+            {
+                using (MySqlDataAdapter da = new MySqlDataAdapter(query, con))
+                {
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+                    cmbCustomers.DataSource = dt;
+                    cmbCustomers.DisplayMember = "CUST_NAME";
+                    cmbCustomers.ValueMember = "CUST_ID";
+                    cmbCustomers.SelectedIndex = -1;
+                }
+            }
+
+            if (prompt.ShowDialog() == DialogResult.OK && cmbCustomers.SelectedValue != null)
+            {
+                SelectedCustomerID = Convert.ToInt32(cmbCustomers.SelectedValue);
+                SelectedCustomerName = cmbCustomers.Text;
+                return true;
+            }
+
+            return false;
+        }
 
         private void LoadPaymentMethods()
         {
-            string query = "SELECT [PAYMENT_METHODS], ENABLED FROM PAYMENT_METHODS";
+            string query = "SELECT PAYMENT_METHODS, ENABLED FROM PAYMENT_METHODS";
 
-            using (MySqlConnection con = new MySqlConnection(DatabaseConfig.GetConnectionString()))
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
                     try
                     {
+
+                        if (con.State != ConnectionState.Open) con.Open();
+
                         using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
-                            while(reader.Read())
+                            while (reader.Read())
                             {
                                 string method = reader["PAYMENT_METHODS"].ToString().ToUpper().Trim();
                                 bool isEnabled = Convert.ToBoolean(reader["ENABLED"]);
 
-                                switch(method)
+                                switch (method)
                                 {
                                     case "CASH":
                                         btnCash.Enabled = isEnabled;
@@ -75,6 +127,7 @@ namespace EnchantedPOS
                                 }
                             }
                         }
+
                     }
                     catch (Exception ex)
                     {
@@ -88,6 +141,18 @@ namespace EnchantedPOS
         {
             panelPayment.Visible = true;
             btnReceivePayment.Focus();
+
+            SelectedPaymentMethod = "CASH";
+            SelectedCustomerID = null;
+            SelectedCustomerName = "";
+
+            txtReceivedAmount.ReadOnly = false;
+            txtReceivedAmount.Clear();
+            txtChange.Text = "0.00";
+
+            panelPayment.Visible = true;
+            btnReceivePayment.Focus();
+
         }
 
         private void btnReceivePayment_Click(object sender, EventArgs e)
@@ -98,7 +163,7 @@ namespace EnchantedPOS
         private void txtReceived_KeyDown(object sender, KeyEventArgs e)
         {
 
-            if(e.KeyCode == Keys.Enter)
+            if (e.KeyCode == Keys.Enter)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
@@ -130,13 +195,35 @@ namespace EnchantedPOS
                 }
             }
 
-            
+
         }
 
         private void btnPaymentOK_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.OK;
             this.Close();
+        }
+
+        private void btnSoA_Click(object sender, EventArgs e)
+        {
+            if (PromptForCustomer())
+            {
+                SelectedPaymentMethod = "SALES ON ACCOUNT";
+
+                FinalReceivedAmount = FinalNetAmount;
+                FinalChangeAmount = 0;
+
+                txtReceivedAmount.Text = FinalReceivedAmount.ToString("N2");
+                txtChange.Text = "0.00";
+
+                txtReceivedAmount.ReadOnly = true;
+
+                panelPayment.Visible = true;
+
+                MessageBox.Show($"Transaction will be charged to: {SelectedCustomerName}", "Account Linked", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                btnPaymentOK.Focus();
+            }
         }
     }
 }

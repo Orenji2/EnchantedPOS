@@ -23,6 +23,7 @@ namespace EnchantedPOS
             LoadSuppliers();
             ToggleSuppEditMode(false);
             ToggleCustEditMode(false);
+            LoadCustomers();
         }
 
         private void ToggleEditMode(bool isEditing)
