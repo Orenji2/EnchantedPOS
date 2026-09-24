@@ -49,6 +49,7 @@ namespace EnchantedPOS
             currentTransDate = date;
             currentStation = station;
 
+
             // Setting the minimum window size
             this.MinimumSize = new Size(1024, 768);
 
@@ -183,10 +184,16 @@ namespace EnchantedPOS
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            if (keyData == Keys.F1)
+            {
+                txtBarcode.Focus();
+                return true;
+            }
+
             if (keyData == Keys.F10)
             {
                 SuspendTransaction();
-                return true; 
+                return true;
             }
             else if (keyData == Keys.F11)
             {
@@ -222,18 +229,22 @@ namespace EnchantedPOS
             int transactionCount = 0;
             decimal vatableGross = 0m;
             decimal vatExemptGross = 0m;
+            string startInvoice = "N/A";
+            string endInvoice = "N/A";
 
             string query = @"
-                            SELECT 
-                                (SELECT COUNT(DISTINCT INVOICE) FROM REGISTER WHERE CASHIER_ID = @cashier AND SHIFT_NUM = @shift AND TRANS_DATE = @date AND STATION_NUM = @station) AS TotalTransactions,
-                                (SELECT SUM(InvoiceTotal) FROM (SELECT MAX(GRAND_TOTAL) AS InvoiceTotal FROM REGISTER WHERE CASHIER_ID = @cashier AND SHIFT_NUM = @shift AND TRANS_DATE = @date AND STATION_NUM = @station GROUP BY INVOICE) AS SubT) AS TotalSales,
-                                SUM(CASE WHEN NON_VAT = 0 THEN TOTAL_AMNT ELSE 0 END) AS VatableGross,
-                                SUM(CASE WHEN NON_VAT = 1 THEN TOTAL_AMNT ELSE 0 END) AS VatExemptGross
-                            FROM REGISTER
-                            WHERE CASHIER_ID = @cashier 
-                              AND SHIFT_NUM = @shift 
-                              AND TRANS_DATE = @date 
-                              AND STATION_NUM = @station";
+        SELECT 
+            (SELECT COUNT(DISTINCT INVOICE) FROM REGISTER WHERE CASHIER_ID = @cashier AND SHIFT_NUM = @shift AND TRANS_DATE = @date AND STATION_NUM = @station) AS TotalTransactions,
+            (SELECT SUM(InvoiceTotal) FROM (SELECT MAX(GRAND_TOTAL) AS InvoiceTotal FROM REGISTER WHERE CASHIER_ID = @cashier AND SHIFT_NUM = @shift AND TRANS_DATE = @date AND STATION_NUM = @station GROUP BY INVOICE) AS SubT) AS TotalSales,
+            SUM(CASE WHEN NON_VAT = 0 THEN TOTAL_AMNT ELSE 0 END) AS VatableGross,
+            SUM(CASE WHEN NON_VAT = 1 THEN TOTAL_AMNT ELSE 0 END) AS VatExemptGross,
+            (SELECT MIN(INVOICE) FROM REGISTER WHERE CASHIER_ID = @cashier AND SHIFT_NUM = @shift AND TRANS_DATE = @date AND STATION_NUM = @station) AS StartInvoice,
+            (SELECT MAX(INVOICE) FROM REGISTER WHERE CASHIER_ID = @cashier AND SHIFT_NUM = @shift AND TRANS_DATE = @date AND STATION_NUM = @station) AS EndInvoice
+        FROM REGISTER
+        WHERE CASHIER_ID = @cashier 
+          AND SHIFT_NUM = @shift 
+          AND TRANS_DATE = @date 
+          AND STATION_NUM = @station";
 
             using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
@@ -253,6 +264,9 @@ namespace EnchantedPOS
 
                             vatableGross = Convert.IsDBNull(reader["VatableGross"]) ? 0m : Convert.ToDecimal(reader["VatableGross"]);
                             vatExemptGross = Convert.IsDBNull(reader["VatExemptGross"]) ? 0m : Convert.ToDecimal(reader["VatExemptGross"]);
+
+                            startInvoice = Convert.IsDBNull(reader["StartInvoice"]) ? "N/A" : reader["StartInvoice"].ToString();
+                            endInvoice = Convert.IsDBNull(reader["EndInvoice"]) ? "N/A" : reader["EndInvoice"].ToString();
                         }
                     }
                 }
@@ -263,10 +277,10 @@ namespace EnchantedPOS
             decimal vatAmount = vatableGross - vatableSales;
 
             // Pass the calculated totals to our print method
-            PrintXReading(shiftTotalSales, transactionCount, vatableSales, vatAmount, vatExemptGross);
+            PrintXReading(shiftTotalSales, transactionCount, vatableSales, vatAmount, vatExemptGross, startInvoice, endInvoice);
         }
 
-        private void PrintXReading(decimal totalSales, int transactionCount, decimal vatableSales, decimal vatAmount, decimal vatExempt)
+        private void PrintXReading(decimal totalSales, int transactionCount, decimal vatableSales, decimal vatAmount, decimal vatExempt, string startInvoice, string endInvoice)
         {
             PrintDocument printDoc = new PrintDocument();
             printDoc.PrintPage += (sender, e) =>
@@ -292,6 +306,8 @@ namespace EnchantedPOS
                 g.DrawString($"Cashier: {currentCashier}", fontRegular, brush, leftMargin, yPos);
                 yPos += 15;
                 g.DrawString($"Shift:   {currentShift}   Station: {currentStation}", fontRegular, brush, leftMargin, yPos);
+                yPos += 15;
+                g.DrawString($"Beg Inv: {startInvoice}  End Inv: {endInvoice}", fontRegular, brush, leftMargin, yPos);
                 yPos += 20;
                 g.DrawString(new string('-', 38), fontRegular, brush, leftMargin, yPos);
                 yPos += 20;
@@ -592,6 +608,11 @@ namespace EnchantedPOS
             this.ActiveControl = txtBarcode;
 
             this.dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
+
+            timer1.Start();
+
+            labelGreetings.Text = $"I'm {currentCashier}!";
+            labelHeader.Text = $"Welcome to {headerBusinessName}!";
         }
 
         private void ClearTempRegister()
@@ -719,7 +740,7 @@ namespace EnchantedPOS
                 }
                 txtBarcode.Focus();
             }
-            else if(result == DialogResult.Yes) // EDIT
+            else if (result == DialogResult.Yes) // EDIT
             {
                 dataGridView1.ReadOnly = false;
                 foreach (DataGridViewColumn col in dataGridView1.Columns)
@@ -969,7 +990,7 @@ namespace EnchantedPOS
 
         private void processItem(string Barcode)
         {
-            if(!decimal.TryParse(txtQty.Text, out decimal qtyToAdd) || qtyToAdd <= 0)
+            if (!decimal.TryParse(txtQty.Text, out decimal qtyToAdd) || qtyToAdd <= 0)
             {
                 qtyToAdd = 1;
             }
@@ -1114,7 +1135,8 @@ namespace EnchantedPOS
                     {
                         scannedBarcode = browseForm.SelectedBarcode;
 
-                        if (!string.IsNullOrEmpty(scannedBarcode)) {
+                        if (!string.IsNullOrEmpty(scannedBarcode))
+                        {
 
                             processItem(scannedBarcode);
 
@@ -1231,7 +1253,7 @@ namespace EnchantedPOS
                         }
                         else
                         {
-                            currentInvoiceNumber = 10001; 
+                            currentInvoiceNumber = 10001;
                         }
                     }
                     catch (Exception ex)
@@ -1502,7 +1524,7 @@ namespace EnchantedPOS
                         bool.TryParse(row.Cells[7].Value.ToString(), out isNonVat);
                     }
 
-                    if(isNonVat)
+                    if (isNonVat)
                     {
                         vatExempt += rowTotal;
                     }
@@ -1536,8 +1558,8 @@ namespace EnchantedPOS
                                 return new ProductRecord
                                 {
                                     Barcode = barcode,
-                                    EngName = reader["PROD_NAME"].ToString(), 
-                                    KorName = reader["ALT_PROD_NAME"].ToString(), 
+                                    EngName = reader["PROD_NAME"].ToString(),
+                                    KorName = reader["ALT_PROD_NAME"].ToString(),
                                     RegPrice = Convert.ToDecimal(reader["R_PRICE"]),
                                     WholesalePrice = Convert.ToDecimal(reader["D_PRICE_A"]),
                                     VipPrice = Convert.ToDecimal(reader["D_PRICE_B"]),
@@ -1554,6 +1576,21 @@ namespace EnchantedPOS
                 }
             }
             return null;
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            labelDateTime.Text = DateTime.Now.ToString("hh:mm:ss tt MM/dd/yyyy");
+        }
+
+        private void btnSuspend_Click(object sender, EventArgs e)
+        {
+            SuspendTransaction();
+        }
+
+        private void btnRecall_Click(object sender, EventArgs e)
+        {
+            RecallTransaction();
         }
     }
 }

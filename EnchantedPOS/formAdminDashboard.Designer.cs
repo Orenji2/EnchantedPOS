@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             panelSidebar = new Panel();
+            btnInventoryManagement = new Button();
             btnSupplierInvoiceEntry = new Button();
             button1 = new Button();
             button3 = new Button();
@@ -36,13 +37,12 @@
             btnFileMaintenance = new Button();
             btnDashboard = new Button();
             panelWorkspace = new Panel();
-            btnInventoryManagement = new Button();
             panelSidebar.SuspendLayout();
             SuspendLayout();
             // 
             // panelSidebar
             // 
-            panelSidebar.BackColor = Color.DimGray;
+            panelSidebar.BackColor = Color.DarkBlue;
             panelSidebar.Controls.Add(btnInventoryManagement);
             panelSidebar.Controls.Add(btnSupplierInvoiceEntry);
             panelSidebar.Controls.Add(button1);
@@ -55,6 +55,20 @@
             panelSidebar.Name = "panelSidebar";
             panelSidebar.Size = new Size(250, 721);
             panelSidebar.TabIndex = 0;
+            // 
+            // btnInventoryManagement
+            // 
+            btnInventoryManagement.Dock = DockStyle.Top;
+            btnInventoryManagement.FlatAppearance.BorderSize = 0;
+            btnInventoryManagement.FlatStyle = FlatStyle.Flat;
+            btnInventoryManagement.ForeColor = Color.White;
+            btnInventoryManagement.Location = new Point(0, 300);
+            btnInventoryManagement.Name = "btnInventoryManagement";
+            btnInventoryManagement.Size = new Size(250, 50);
+            btnInventoryManagement.TabIndex = 6;
+            btnInventoryManagement.Text = "INVENTORY ADJUST";
+            btnInventoryManagement.UseVisualStyleBackColor = true;
+            btnInventoryManagement.Click += btnInventoryManagement_Click;
             // 
             // btnSupplierInvoiceEntry
             // 
@@ -145,20 +159,6 @@
             panelWorkspace.Name = "panelWorkspace";
             panelWorkspace.Size = new Size(756, 721);
             panelWorkspace.TabIndex = 1;
-            // 
-            // btnInventoryManagement
-            // 
-            btnInventoryManagement.Dock = DockStyle.Top;
-            btnInventoryManagement.FlatAppearance.BorderSize = 0;
-            btnInventoryManagement.FlatStyle = FlatStyle.Flat;
-            btnInventoryManagement.ForeColor = Color.White;
-            btnInventoryManagement.Location = new Point(0, 300);
-            btnInventoryManagement.Name = "btnInventoryManagement";
-            btnInventoryManagement.Size = new Size(250, 50);
-            btnInventoryManagement.TabIndex = 6;
-            btnInventoryManagement.Text = "INVENTORY ADJUST";
-            btnInventoryManagement.UseVisualStyleBackColor = true;
-            btnInventoryManagement.Click += btnInventoryManagement_Click;
             // 
             // formAdminDashboard
             // 

@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             lblName = new Label();
             lblAddress = new Label();
             gbPOSLogin = new GroupBox();
@@ -40,6 +41,8 @@
             btnReports = new Button();
             btnPOS = new Button();
             panelPOSLogin = new Panel();
+            labelTime = new Label();
+            timer1 = new System.Windows.Forms.Timer(components);
             gbPOSLogin.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             panelPOSLogin.SuspendLayout();
@@ -61,7 +64,7 @@
             // 
             lblAddress.AutoSize = true;
             lblAddress.BackColor = Color.Transparent;
-            lblAddress.ForeColor = SystemColors.ControlLightLight;
+            lblAddress.ForeColor = Color.DarkBlue;
             lblAddress.Location = new Point(47, 169);
             lblAddress.Name = "lblAddress";
             lblAddress.Size = new Size(90, 20);
@@ -149,6 +152,7 @@
             // btnAdmin
             // 
             btnAdmin.BackColor = Color.Teal;
+            btnAdmin.FlatStyle = FlatStyle.Flat;
             btnAdmin.ForeColor = SystemColors.ControlLight;
             btnAdmin.Location = new Point(959, 549);
             btnAdmin.Margin = new Padding(3, 4, 3, 4);
@@ -205,6 +209,24 @@
             panelPOSLogin.TabIndex = 6;
             panelPOSLogin.Visible = false;
             // 
+            // labelTime
+            // 
+            labelTime.AutoSize = true;
+            labelTime.BackColor = Color.Transparent;
+            labelTime.Font = new Font("Segoe UI Black", 20.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            labelTime.ForeColor = Color.MediumBlue;
+            labelTime.Location = new Point(31, 654);
+            labelTime.Name = "labelTime";
+            labelTime.Size = new Size(151, 46);
+            labelTime.TabIndex = 7;
+            labelTime.Text = "<Time>";
+            // 
+            // timer1
+            // 
+            timer1.Enabled = true;
+            timer1.Interval = 1000;
+            timer1.Tick += timer1_Tick;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -212,6 +234,7 @@
             BackColor = Color.White;
             BackgroundImageLayout = ImageLayout.None;
             ClientSize = new Size(1264, 848);
+            Controls.Add(labelTime);
             Controls.Add(panelPOSLogin);
             Controls.Add(btnPOS);
             Controls.Add(btnReports);
@@ -224,6 +247,7 @@
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "EnchantedPOS";
+            Load += Form1_Load;
             gbPOSLogin.ResumeLayout(false);
             gbPOSLogin.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
@@ -246,5 +270,7 @@
         private Button btnPOS;
         private Button btnLogOut;
         private Panel panelPOSLogin;
+        private Label labelTime;
+        private System.Windows.Forms.Timer timer1;
     }
 }

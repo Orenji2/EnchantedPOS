@@ -403,5 +403,19 @@ namespace EnchantedPOS
         {
             CalculatePricesFromMarkup();
         }
+
+        private void btnHistory_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtBarcode.Text))
+            {
+                MessageBox.Show("Please select a product from the list first to view its purchase history.", "No Item Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using (formItemHistory historyForm = new formItemHistory(txtBarcode.Text.Trim(), txtProdName.Text.Trim()))
+            {
+                historyForm.ShowDialog(this);
+            }
+        }
     }
 }

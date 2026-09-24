@@ -28,9 +28,15 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             panelBarcode = new Panel();
             btnRecall = new Button();
             pnlBottom = new Panel();
+            panel1 = new Panel();
+            labelDateTime = new Label();
+            labelGreetings = new Label();
+            labelHeader = new Label();
             btnSuspend = new Button();
             groupBox1 = new GroupBox();
             labelBarcode = new Label();
@@ -53,7 +59,10 @@
             colNonVat = new DataGridViewTextBoxColumn();
             labelSales = new Label();
             panelTotal = new Panel();
+            timer1 = new System.Windows.Forms.Timer(components);
             panelBarcode.SuspendLayout();
+            pnlBottom.SuspendLayout();
+            panel1.SuspendLayout();
             groupBox1.SuspendLayout();
             panelSales.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
@@ -78,7 +87,7 @@
             // 
             // btnRecall
             // 
-            btnRecall.BackColor = Color.Teal;
+            btnRecall.BackColor = Color.DarkBlue;
             btnRecall.FlatStyle = FlatStyle.Flat;
             btnRecall.ForeColor = SystemColors.ControlLightLight;
             btnRecall.Location = new Point(233, 337);
@@ -86,22 +95,69 @@
             btnRecall.Name = "btnRecall";
             btnRecall.Size = new Size(87, 93);
             btnRecall.TabIndex = 6;
-            btnRecall.Text = "RECALL";
+            btnRecall.Text = "[F11] RECALL";
             btnRecall.UseVisualStyleBackColor = false;
+            btnRecall.Click += btnRecall_Click;
             // 
             // pnlBottom
             // 
-            pnlBottom.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            pnlBottom.BackColor = Color.Teal;
-            pnlBottom.Location = new Point(3, 452);
+            pnlBottom.BackColor = Color.White;
+            pnlBottom.Controls.Add(panel1);
+            pnlBottom.Controls.Add(labelGreetings);
+            pnlBottom.Controls.Add(labelHeader);
+            pnlBottom.Dock = DockStyle.Bottom;
+            pnlBottom.Location = new Point(0, 457);
             pnlBottom.Margin = new Padding(3, 4, 3, 4);
             pnlBottom.Name = "pnlBottom";
-            pnlBottom.Size = new Size(354, 409);
+            pnlBottom.Size = new Size(352, 404);
             pnlBottom.TabIndex = 5;
+            // 
+            // panel1
+            // 
+            panel1.BackColor = Color.MidnightBlue;
+            panel1.Controls.Add(labelDateTime);
+            panel1.Dock = DockStyle.Bottom;
+            panel1.Location = new Point(0, 369);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(352, 35);
+            panel1.TabIndex = 3;
+            // 
+            // labelDateTime
+            // 
+            labelDateTime.AutoSize = true;
+            labelDateTime.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            labelDateTime.ForeColor = Color.White;
+            labelDateTime.Location = new Point(2, 1);
+            labelDateTime.Name = "labelDateTime";
+            labelDateTime.Size = new Size(180, 28);
+            labelDateTime.TabIndex = 0;
+            labelDateTime.Text = "--:--:-- -- --/--/----";
+            // 
+            // labelGreetings
+            // 
+            labelGreetings.AutoSize = true;
+            labelGreetings.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            labelGreetings.ForeColor = Color.MidnightBlue;
+            labelGreetings.Location = new Point(10, 61);
+            labelGreetings.Name = "labelGreetings";
+            labelGreetings.Size = new Size(106, 28);
+            labelGreetings.TabIndex = 2;
+            labelGreetings.Text = "Welcome!";
+            // 
+            // labelHeader
+            // 
+            labelHeader.AutoSize = true;
+            labelHeader.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            labelHeader.ForeColor = Color.MidnightBlue;
+            labelHeader.Location = new Point(10, 15);
+            labelHeader.Name = "labelHeader";
+            labelHeader.Size = new Size(106, 28);
+            labelHeader.TabIndex = 1;
+            labelHeader.Text = "Welcome!";
             // 
             // btnSuspend
             // 
-            btnSuspend.BackColor = Color.Teal;
+            btnSuspend.BackColor = Color.DarkBlue;
             btnSuspend.FlatStyle = FlatStyle.Flat;
             btnSuspend.ForeColor = SystemColors.ControlLightLight;
             btnSuspend.Location = new Point(128, 337);
@@ -109,8 +165,9 @@
             btnSuspend.Name = "btnSuspend";
             btnSuspend.Size = new Size(98, 93);
             btnSuspend.TabIndex = 5;
-            btnSuspend.Text = "SUSPEND";
+            btnSuspend.Text = "[F10] SUSPEND";
             btnSuspend.UseVisualStyleBackColor = false;
+            btnSuspend.Click += btnSuspend_Click;
             // 
             // groupBox1
             // 
@@ -188,7 +245,7 @@
             // 
             // btnReprint
             // 
-            btnReprint.BackColor = Color.Teal;
+            btnReprint.BackColor = Color.DarkBlue;
             btnReprint.FlatStyle = FlatStyle.Flat;
             btnReprint.ForeColor = SystemColors.ControlLightLight;
             btnReprint.Location = new Point(23, 337);
@@ -196,7 +253,7 @@
             btnReprint.Name = "btnReprint";
             btnReprint.Size = new Size(98, 93);
             btnReprint.TabIndex = 1;
-            btnReprint.Text = "REPRINT";
+            btnReprint.Text = "[F9] REPRINT";
             btnReprint.UseVisualStyleBackColor = false;
             btnReprint.Click += btnReprint_Click;
             // 
@@ -214,10 +271,10 @@
             // txtTotalAmnt
             // 
             txtTotalAmnt.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            txtTotalAmnt.BackColor = Color.FromArgb(0, 64, 64);
+            txtTotalAmnt.BackColor = Color.White;
             txtTotalAmnt.BorderStyle = BorderStyle.FixedSingle;
             txtTotalAmnt.Font = new Font("Segoe UI", 60F, FontStyle.Bold);
-            txtTotalAmnt.ForeColor = SystemColors.Window;
+            txtTotalAmnt.ForeColor = Color.DarkBlue;
             txtTotalAmnt.Location = new Point(-3, 0);
             txtTotalAmnt.Margin = new Padding(3, 4, 3, 4);
             txtTotalAmnt.Name = "txtTotalAmnt";
@@ -252,7 +309,16 @@
             dataGridView1.Margin = new Padding(3, 4, 3, 4);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.ReadOnly = true;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle2.BackColor = Color.White;
+            dataGridViewCellStyle2.Font = new Font("Segoe UI", 9F);
+            dataGridViewCellStyle2.ForeColor = SystemColors.WindowText;
+            dataGridViewCellStyle2.SelectionBackColor = Color.DarkBlue;
+            dataGridViewCellStyle2.SelectionForeColor = SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = DataGridViewTriState.True;
+            dataGridView1.RowHeadersDefaultCellStyle = dataGridViewCellStyle2;
             dataGridView1.RowHeadersWidth = 51;
+            dataGridView1.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
             dataGridView1.Size = new Size(933, 672);
             dataGridView1.TabIndex = 0;
             dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
@@ -342,7 +408,7 @@
             // 
             // panelTotal
             // 
-            panelTotal.BackColor = Color.Teal;
+            panelTotal.BackColor = Color.MidnightBlue;
             panelTotal.Controls.Add(txtTotalAmnt);
             panelTotal.Controls.Add(labelSales);
             panelTotal.Dock = DockStyle.Top;
@@ -350,6 +416,11 @@
             panelTotal.Name = "panelTotal";
             panelTotal.Size = new Size(933, 187);
             panelTotal.TabIndex = 7;
+            // 
+            // timer1
+            // 
+            timer1.Interval = 1000;
+            timer1.Tick += timer1_Tick;
             // 
             // formPOS
             // 
@@ -367,6 +438,10 @@
             KeyDown += formPOS_KeyDown;
             panelBarcode.ResumeLayout(false);
             panelBarcode.PerformLayout();
+            pnlBottom.ResumeLayout(false);
+            pnlBottom.PerformLayout();
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
             panelSales.ResumeLayout(false);
@@ -403,5 +478,10 @@
         private DataGridViewTextBoxColumn disc;
         private DataGridViewTextBoxColumn regprice;
         private DataGridViewTextBoxColumn colNonVat;
+        private Label labelDateTime;
+        private System.Windows.Forms.Timer timer1;
+        private Label labelHeader;
+        private Label labelGreetings;
+        private Panel panel1;
     }
 }

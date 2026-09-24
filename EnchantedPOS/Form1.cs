@@ -159,7 +159,7 @@ namespace EnchantedPOS
         );
                     pos.Show();
                 }
-                
+
                 btnPOS.Visible = true;
                 btnReports.Visible = true;
                 btnAdmin.Visible = true;
@@ -258,7 +258,7 @@ namespace EnchantedPOS
                     }
                 }
             }
-           
+
             else
             {
                 if (existingPos != null)
@@ -370,7 +370,7 @@ namespace EnchantedPOS
                     }
                 }
 
-                
+
                 return true;
             }
 
@@ -384,7 +384,7 @@ namespace EnchantedPOS
             this.Hide();
             adminForm.ShowDialog();
             this.Show();
-            
+
         }
 
         private bool CheckAdminPassword()
@@ -425,10 +425,12 @@ namespace EnchantedPOS
         private void btnReports_Click(object sender, EventArgs e)
         {
             // Prompt for admin password or check if current user is admin
-            if (CheckAdminPassword()) // Reusing your existing manager override method!
+            if (CheckAdminPassword()) 
             {
-                MessageBox.Show("Access Granted to Reports.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                // TODO: Open your Reports Form
+                using (formReports reportsMenu = new formReports())
+                {
+                    reportsMenu.ShowDialog(this);
+                }
             }
             else
             {
@@ -442,6 +444,16 @@ namespace EnchantedPOS
             {
                 btnLogIn.Focus();
             }
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            labelTime.Text = DateTime.Now.ToString("hh:mm:ss tt MM/dd/yyyy");
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            timer1.Start();
         }
     }
 }
