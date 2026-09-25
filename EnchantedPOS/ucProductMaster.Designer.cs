@@ -73,6 +73,7 @@
             txtMarkPrice = new TextBox();
             btnHistory = new Button();
             panelBottomButtons = new Panel();
+            btnProdMastList = new Button();
             panelProductsList = new Panel();
             panelWorkspace = new Panel();
             label13 = new Label();
@@ -93,7 +94,7 @@
             btnAdd.BackColor = Color.DarkBlue;
             btnAdd.FlatStyle = FlatStyle.Flat;
             btnAdd.ForeColor = Color.White;
-            btnAdd.Location = new Point(58, 10);
+            btnAdd.Location = new Point(13, 10);
             btnAdd.Name = "btnAdd";
             btnAdd.Size = new Size(120, 68);
             btnAdd.TabIndex = 0;
@@ -106,7 +107,7 @@
             btnEdit.BackColor = Color.DarkBlue;
             btnEdit.FlatStyle = FlatStyle.Flat;
             btnEdit.ForeColor = Color.White;
-            btnEdit.Location = new Point(184, 10);
+            btnEdit.Location = new Point(141, 10);
             btnEdit.Name = "btnEdit";
             btnEdit.Size = new Size(120, 68);
             btnEdit.TabIndex = 1;
@@ -119,7 +120,7 @@
             btnSave.BackColor = Color.DarkBlue;
             btnSave.FlatStyle = FlatStyle.Flat;
             btnSave.ForeColor = Color.White;
-            btnSave.Location = new Point(310, 10);
+            btnSave.Location = new Point(267, 10);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(120, 68);
             btnSave.TabIndex = 2;
@@ -132,7 +133,7 @@
             btnDelete.BackColor = Color.DarkBlue;
             btnDelete.FlatStyle = FlatStyle.Flat;
             btnDelete.ForeColor = Color.White;
-            btnDelete.Location = new Point(436, 10);
+            btnDelete.Location = new Point(393, 10);
             btnDelete.Name = "btnDelete";
             btnDelete.Size = new Size(120, 68);
             btnDelete.TabIndex = 3;
@@ -145,7 +146,7 @@
             btnCancel.BackColor = Color.DarkBlue;
             btnCancel.FlatStyle = FlatStyle.Flat;
             btnCancel.ForeColor = Color.White;
-            btnCancel.Location = new Point(562, 10);
+            btnCancel.Location = new Point(521, 10);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(120, 68);
             btnCancel.TabIndex = 4;
@@ -161,7 +162,7 @@
             dgvProducts.Location = new Point(13, 30);
             dgvProducts.Name = "dgvProducts";
             dgvProducts.RowHeadersWidth = 51;
-            dgvProducts.Size = new Size(862, 310);
+            dgvProducts.Size = new Size(880, 310);
             dgvProducts.TabIndex = 5;
             dgvProducts.CellClick += dgvProducts_CellClick;
             dgvProducts.CellContentClick += dgvProducts_CellContentClick;
@@ -188,7 +189,7 @@
             txtProdName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             txtProdName.Location = new Point(262, 28);
             txtProdName.Name = "txtProdName";
-            txtProdName.Size = new Size(612, 27);
+            txtProdName.Size = new Size(630, 27);
             txtProdName.TabIndex = 8;
             // 
             // txtAltProdName
@@ -196,7 +197,7 @@
             txtAltProdName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             txtAltProdName.Location = new Point(262, 77);
             txtAltProdName.Name = "txtAltProdName";
-            txtAltProdName.Size = new Size(612, 27);
+            txtAltProdName.Size = new Size(630, 27);
             txtAltProdName.TabIndex = 9;
             // 
             // txtItemCost
@@ -516,7 +517,7 @@
             btnHistory.BackColor = Color.DarkBlue;
             btnHistory.FlatStyle = FlatStyle.Flat;
             btnHistory.ForeColor = Color.White;
-            btnHistory.Location = new Point(755, 10);
+            btnHistory.Location = new Point(647, 10);
             btnHistory.Name = "btnHistory";
             btnHistory.Size = new Size(120, 68);
             btnHistory.TabIndex = 24;
@@ -527,6 +528,7 @@
             // panelBottomButtons
             // 
             panelBottomButtons.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            panelBottomButtons.Controls.Add(btnProdMastList);
             panelBottomButtons.Controls.Add(btnHistory);
             panelBottomButtons.Controls.Add(btnCancel);
             panelBottomButtons.Controls.Add(btnDelete);
@@ -535,8 +537,21 @@
             panelBottomButtons.Controls.Add(btnAdd);
             panelBottomButtons.Location = new Point(0, 695);
             panelBottomButtons.Name = "panelBottomButtons";
-            panelBottomButtons.Size = new Size(891, 85);
+            panelBottomButtons.Size = new Size(909, 85);
             panelBottomButtons.TabIndex = 25;
+            // 
+            // btnProdMastList
+            // 
+            btnProdMastList.BackColor = Color.DarkBlue;
+            btnProdMastList.FlatStyle = FlatStyle.Flat;
+            btnProdMastList.ForeColor = Color.White;
+            btnProdMastList.Location = new Point(773, 10);
+            btnProdMastList.Name = "btnProdMastList";
+            btnProdMastList.Size = new Size(120, 68);
+            btnProdMastList.TabIndex = 25;
+            btnProdMastList.Text = "Product Master List";
+            btnProdMastList.UseVisualStyleBackColor = false;
+            btnProdMastList.Click += btnProdMastList_Click;
             // 
             // panelProductsList
             // 
@@ -545,7 +560,7 @@
             panelProductsList.Dock = DockStyle.Top;
             panelProductsList.Location = new Point(0, 0);
             panelProductsList.Name = "panelProductsList";
-            panelProductsList.Size = new Size(891, 347);
+            panelProductsList.Size = new Size(909, 347);
             panelProductsList.TabIndex = 26;
             // 
             // panelWorkspace
@@ -565,7 +580,7 @@
             panelWorkspace.Controls.Add(txtBarcode);
             panelWorkspace.Location = new Point(1, 345);
             panelWorkspace.Name = "panelWorkspace";
-            panelWorkspace.Size = new Size(889, 349);
+            panelWorkspace.Size = new Size(907, 349);
             panelWorkspace.TabIndex = 27;
             // 
             // label13
@@ -602,7 +617,7 @@
             Controls.Add(panelProductsList);
             Controls.Add(panelBottomButtons);
             Name = "ucProductMaster";
-            Size = new Size(891, 780);
+            Size = new Size(909, 780);
             ((System.ComponentModel.ISupportInitialize)dgvProducts).EndInit();
             groupCostPriice.ResumeLayout(false);
             groupCostPriice.PerformLayout();
@@ -679,5 +694,6 @@
         private Label label13;
         private Label labelSKU;
         private TextBox textBox1;
+        private Button btnProdMastList;
     }
 }

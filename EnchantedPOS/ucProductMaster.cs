@@ -1,11 +1,12 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Printing;
 using System.Text;
 using System.Windows.Forms;
-using MySql.Data.MySqlClient;
 
 namespace EnchantedPOS
 {
@@ -14,6 +15,10 @@ namespace EnchantedPOS
 
         private bool isAdding = false;
         private bool isCalculating = false;
+        private DataTable dtMasterList;
+        private int masterListPrintRowIndex = 0;
+        private decimal grandStoreCost = 0m, grandStorePrice = 0m;
+        private decimal grandWHCost = 0m, grandWHPrice = 0m;
         public ucProductMaster()
         {
             InitializeComponent();
@@ -416,6 +421,200 @@ namespace EnchantedPOS
             {
                 historyForm.ShowDialog(this);
             }
+        }
+
+        private void btnProdMastList_Click(object sender, EventArgs e)
+        {
+            GenerateMasterListReport();
+        }
+
+        private void GenerateMasterListReport()
+        {
+            // Reset trackers
+            masterListPrintRowIndex = 0;
+            grandStoreCost = 0m; grandStorePrice = 0m;
+            grandWHCost = 0m; grandWHPrice = 0m;
+            dtMasterList = new DataTable();
+
+            string query = @"
+        SELECT 
+            BARCODE, 
+            PROD_NAME, 
+            IFNULL(COST, 0) AS COST, 
+            IFNULL(R_PRICE, 0) AS PRICE, 
+            IFNULL(STOCK, 0) AS STORE_STOCK
+            /* If you add a WH_STOCK column later, add it here and map it below */
+        FROM PRODMAST 
+        ORDER BY PROD_NAME ASC";
+
+            using (MySqlConnection con = DatabaseConfig.GetConnection())
+            {
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    try
+                    {
+                        using (MySqlDataAdapter da = new MySqlDataAdapter(cmd))
+                        {
+                            da.Fill(dtMasterList);
+                        }
+
+                        if (dtMasterList.Rows.Count == 0)
+                        {
+                            MessageBox.Show("No products found in the database.", "Empty Report", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            return;
+                        }
+
+                        // Calculate all grand totals
+                        foreach (DataRow row in dtMasterList.Rows)
+                        {
+                            decimal cost = Convert.ToDecimal(row["COST"]);
+                            decimal price = Convert.ToDecimal(row["PRICE"]);
+                            decimal storeQty = Convert.ToDecimal(row["STORE_STOCK"]);
+                            decimal whQty = 0m; // Defaulting to 0 for now
+
+                            grandStoreCost += (storeQty * cost);
+                            grandStorePrice += (storeQty * price);
+                            grandWHCost += (whQty * cost);
+                            grandWHPrice += (whQty * price);
+                        }
+
+                        // Setup A4 Printer (8.27" x 11.69")
+                        PrintDocument printDoc = new PrintDocument();
+                        printDoc.DefaultPageSettings.PaperSize = new PaperSize("A4", 827, 1169);
+                        printDoc.PrintPage += PrintMasterListPage;
+
+                        PrintPreviewDialog previewDialog = new PrintPreviewDialog { Document = printDoc, Width = 800, Height = 800 };
+                        previewDialog.ShowDialog(this);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Database Error: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void PrintMasterListPage(object sender, PrintPageEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Font fontRegular = new Font("Courier New", 9);
+            Font fontSmall = new Font("Courier New", 8);
+            Font fontBold = new Font("Courier New", 10, FontStyle.Bold);
+            Font fontHeader = new Font("Courier New", 14, FontStyle.Bold);
+            Brush brush = Brushes.Black;
+
+            // A4 Dimensions & Spacing
+            float yPos = 50;
+            float leftMargin = 40;
+            float rightMargin = 780;
+            float pageBottom = e.PageBounds.Height - 120; // Leave room for footer
+
+            // X-Coordinates for Columns (Right-aligned for numbers)
+            float colBarcode = leftMargin;
+            float colName = 160;
+            float colCost = 450;
+            float colPrice = 520;
+            float colStore = 590;
+            float colWH = 670;
+            float colTotal = 750;
+
+            StringFormat centerAlign = new StringFormat() { Alignment = StringAlignment.Center };
+            StringFormat rightAlign = new StringFormat() { Alignment = StringAlignment.Far };
+
+            // --- HEADER (Prints on every page) ---
+            g.DrawString("PRODUCT MASTER LIST", fontHeader, brush, e.PageBounds.Width / 2, yPos, centerAlign);
+            yPos += 25;
+            g.DrawString($"Printed: {DateTime.Now.ToString("MM/dd/yyyy hh:mm tt")}", fontRegular, brush, e.PageBounds.Width / 2, yPos, centerAlign);
+            yPos += 30;
+
+            g.DrawString("BARCODE", fontBold, brush, colBarcode, yPos);
+            g.DrawString("PRODUCT NAME", fontBold, brush, colName, yPos);
+            g.DrawString("COST", fontBold, brush, colCost, yPos, rightAlign);
+            g.DrawString("PRICE", fontBold, brush, colPrice, yPos, rightAlign);
+            g.DrawString("STORE", fontBold, brush, colStore, yPos, rightAlign);
+            g.DrawString("WH", fontBold, brush, colWH, yPos, rightAlign);
+            g.DrawString("TOTAL", fontBold, brush, colTotal, yPos, rightAlign);
+            yPos += 20;
+
+            g.DrawLine(Pens.Black, leftMargin, yPos, rightMargin, yPos);
+            yPos += 15;
+
+            // --- ITEM BREAKDOWN (Paginated Loop) ---
+            while (masterListPrintRowIndex < dtMasterList.Rows.Count)
+            {
+                DataRow row = dtMasterList.Rows[masterListPrintRowIndex];
+
+                string barcode = row["BARCODE"].ToString();
+                string name = row["PROD_NAME"].ToString();
+                decimal cost = Convert.ToDecimal(row["COST"]);
+                decimal price = Convert.ToDecimal(row["PRICE"]);
+                decimal storeStock = Convert.ToDecimal(row["STORE_STOCK"]);
+                decimal whStock = 0m;
+                decimal totalStock = storeStock + whStock;
+
+                // Truncate overly long product names to prevent overlap into the Cost column
+                if (name.Length > 30) name = name.Substring(0, 27) + "...";
+
+                g.DrawString(barcode, fontRegular, brush, colBarcode, yPos);
+                g.DrawString(name, fontRegular, brush, colName, yPos);
+                g.DrawString(cost.ToString("N2"), fontRegular, brush, colCost, yPos, rightAlign);
+                g.DrawString(price.ToString("N2"), fontRegular, brush, colPrice, yPos, rightAlign);
+                g.DrawString(storeStock.ToString("0.###"), fontRegular, brush, colStore, yPos, rightAlign);
+                g.DrawString(whStock.ToString("0.###"), fontRegular, brush, colWH, yPos, rightAlign);
+                g.DrawString(totalStock.ToString("0.###"), fontBold, brush, colTotal, yPos, rightAlign);
+
+                yPos += 18;
+                masterListPrintRowIndex++;
+
+                // Hit bottom of the page -> Trigger new page
+                if (yPos >= pageBottom)
+                {
+                    e.HasMorePages = true;
+                    return;
+                }
+            }
+
+            // --- GRAND TOTALS (Prints only on the final page) ---
+            yPos += 15;
+            g.DrawLine(Pens.Black, leftMargin, yPos, rightMargin, yPos);
+            yPos += 20;
+
+            decimal totalCombinedCost = grandStoreCost + grandWHCost;
+            decimal totalCombinedPrice = grandStorePrice + grandWHPrice;
+
+            g.DrawString("GRAND TOTALS", fontHeader, brush, leftMargin, yPos);
+            yPos += 30;
+
+            // Store Valuation
+            g.DrawString("Store Value (Cost):", fontRegular, brush, leftMargin, yPos);
+            g.DrawString(grandStoreCost.ToString("N2"), fontBold, brush, 300, yPos, rightAlign);
+
+            g.DrawString("Store Value (Retail):", fontRegular, brush, 350, yPos);
+            g.DrawString(grandStorePrice.ToString("N2"), fontBold, brush, 600, yPos, rightAlign);
+            yPos += 20;
+
+            // Warehouse Valuation
+            g.DrawString("WH Value (Cost):", fontRegular, brush, leftMargin, yPos);
+            g.DrawString(grandWHCost.ToString("N2"), fontBold, brush, 300, yPos, rightAlign);
+
+            g.DrawString("WH Value (Retail):", fontRegular, brush, 350, yPos);
+            g.DrawString(grandWHPrice.ToString("N2"), fontBold, brush, 600, yPos, rightAlign);
+            yPos += 25;
+
+            // Combined Valuation
+            g.DrawString("COMBINED ASSET VALUE (COST):", fontBold, brush, leftMargin, yPos);
+            // Increased X from 350 to 500 so the number clears the text
+            g.DrawString(totalCombinedCost.ToString("N2"), fontBold, brush, 500, yPos, rightAlign);
+            yPos += 20;
+
+            g.DrawString("COMBINED ASSET VALUE (RETAIL):", fontBold, brush, leftMargin, yPos);
+            // Increased X from 350 to 500
+            g.DrawString(totalCombinedPrice.ToString("N2"), fontBold, brush, 500, yPos, rightAlign);
+            yPos += 40;
+
+            g.DrawString("END OF REPORT", fontBold, brush, e.PageBounds.Width / 2, yPos, centerAlign);
+
+            e.HasMorePages = false; // Finished printing
         }
     }
 }

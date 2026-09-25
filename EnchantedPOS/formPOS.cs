@@ -16,6 +16,9 @@ namespace EnchantedPOS
     {
 
         private bool isRecalculating = false;
+        private int deliveryReceiptPrintRowIndex = 0;
+        private int deliveryReceiptPageNumber = 1;
+
 
         // private string currentDiscountType = "Regular";
         public enum DiscountType
@@ -846,8 +849,13 @@ namespace EnchantedPOS
                         decimal change = payForm.FinalChangeAmount;
                         decimal receivedAmount = payForm.FinalReceivedAmount;
 
+                        string payMethod = payForm.SelectedPaymentMethod;
+                        int? custId = payForm.SelectedCustomerID;
+                        string custName = payForm.SelectedCustomerName;
+
                         txtPrice.Text = change.ToString("N2");
-                        FinalizeTransaction(currentTotal, receivedAmount, change);
+
+                        FinalizeTransaction(currentTotal, receivedAmount, change, payMethod, custId, custName);
                     }
                 }
             }
@@ -1205,13 +1213,13 @@ namespace EnchantedPOS
                         string rawDisc = row.Cells["disc"].Value?.ToString().Replace("%", "").Trim() ?? "0";
                         decimal.TryParse(rawDisc, out decimal discPercent);
 
-                        //Calculate the new SRP based on the discount
+
                         currentSrp = regSrp - (regSrp * (discPercent / 100m));
 
                         row.Cells["price"].Value = currentSrp.ToString("F2");
                         row.Cells["disc"].Value = discPercent.ToString("F0") + "%"; // Re-add the percentage
                     }
-                    // Or the srp
+
                     else if (colName == "price")
                     {
                         string rawSrp = row.Cells["price"].Value?.ToString().Replace(",", "").Trim() ?? "0";
@@ -1220,8 +1228,6 @@ namespace EnchantedPOS
                         row.Cells["price"].Value = currentSrp.ToString("F2"); //Format to 2 decimals
                     }
 
-                    // Update the Amount for this row
-                    // decimal newAmount = qty * currentSrp;
                     decimal newAmount = Math.Round(qty * currentSrp, MidpointRounding.AwayFromZero);
                     row.Cells["amnt"].Value = newAmount.ToString("F2");
 
@@ -1264,23 +1270,22 @@ namespace EnchantedPOS
             }
         }
 
-        private void FinalizeTransaction(decimal grandTotal, decimal amountReceived, decimal changeAmount)
+        private void FinalizeTransaction(decimal grandTotal, decimal amountReceived, decimal changeAmount, string paymentMethod, int? customerId, string customerName)
         {
             string insertQuery = @"INSERT INTO REGISTER
-                           (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, PROD_NAME, ALT_PROD_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM, NON_VAT)
-                           SELECT INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, PROD_NAME, ALT_PROD_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM, NON_VAT
-                           FROM TEMP_REGISTER
-                           WHERE STATION_NUM = @station AND INVOICE = @invoice";
+                   (INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, PROD_NAME, ALT_PROD_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM, NON_VAT)
+                   SELECT INVOICE, CASHIER_ID, SHIFT_NUM, TRANS_DATE, CHANGE_FUNDS, BAR_CODE, PROD_NAME, ALT_PROD_NAME, QTY, U_PRICE, TOTAL_AMNT, STATION_NUM, NON_VAT
+                   FROM TEMP_REGISTER
+                   WHERE STATION_NUM = @station AND INVOICE = @invoice";
 
             string updateQuery = @"UPDATE REGISTER
-                           SET TRANS_TIME = @time, GRAND_TOTAL = @grand, AMOUNT_RECEIVED = @received, CHANGE_AMNT = @change
-                           WHERE STATION_NUM = @station AND INVOICE = @invoice";
+                   SET TRANS_TIME = @time, GRAND_TOTAL = @grand, AMOUNT_RECEIVED = @received, CHANGE_AMNT = @change
+                   WHERE STATION_NUM = @station AND INVOICE = @invoice";
 
             using (MySqlConnection con = DatabaseConfig.GetConnection())
             {
                 try
                 {
-                    // Insert Query 
                     using (MySqlCommand cmdInsert = new MySqlCommand(insertQuery, con))
                     {
                         cmdInsert.Parameters.AddWithValue("@station", currentStation);
@@ -1288,17 +1293,26 @@ namespace EnchantedPOS
                         cmdInsert.ExecuteNonQuery();
                     }
 
-                    // Update totals
                     using (MySqlCommand cmdUpdate = new MySqlCommand(updateQuery, con))
                     {
-                        cmdUpdate.Parameters.AddWithValue("@time", DateTime.Now.ToString("HH:mm:ss")); // Standard MySQL time format
+                        cmdUpdate.Parameters.AddWithValue("@time", DateTime.Now.ToString("HH:mm:ss"));
                         cmdUpdate.Parameters.AddWithValue("@grand", grandTotal);
                         cmdUpdate.Parameters.AddWithValue("@received", amountReceived);
                         cmdUpdate.Parameters.AddWithValue("@change", changeAmount);
                         cmdUpdate.Parameters.AddWithValue("@station", currentStation);
                         cmdUpdate.Parameters.AddWithValue("@invoice", currentInvoiceNumber);
-
                         cmdUpdate.ExecuteNonQuery();
+                    }
+
+                    if (paymentMethod == "SALES ON ACCOUNT" && customerId.HasValue)
+                    {
+                        string updateCustQuery = "UPDATE CUSTOMER_MAST SET CURR_BALANCE = IFNULL(CURR_BALANCE, 0) + @grand WHERE CUST_ID = @custId";
+                        using (MySqlCommand cmdCust = new MySqlCommand(updateCustQuery, con))
+                        {
+                            cmdCust.Parameters.AddWithValue("@grand", grandTotal);
+                            cmdCust.Parameters.AddWithValue("@custId", customerId.Value);
+                            cmdCust.ExecuteNonQuery();
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -1309,7 +1323,9 @@ namespace EnchantedPOS
             }
 
             DeductInventory();
-            PrintReceipt(grandTotal, amountReceived, changeAmount);
+
+            PrintReceipt(grandTotal, amountReceived, changeAmount, paymentMethod, customerId, customerName);
+
             ClearTempRegister();
             dataGridView1.Rows.Clear();
             currentInvoiceNumber++;
@@ -1317,26 +1333,41 @@ namespace EnchantedPOS
             txtBarcode.Focus();
         }
 
-        private void PrintReceipt(decimal grandTotal, decimal amountReceived, decimal changeAmount)
+        private void PrintReceipt(decimal grandTotal, decimal amountReceived, decimal changeAmount, string paymentMethod, int? customerId, string customerName)
         {
             PrintDocument printDoc = new PrintDocument();
-            printDoc.PrintPage += (sender, e) => PrintReceiptPage(sender, e, grandTotal, amountReceived, changeAmount);
+
+            if (paymentMethod == "SALES ON ACCOUNT")
+            {
+                string custAddress = "";
+                if (customerId.HasValue)
+                {
+                    // Fetch the customer's address from the DB for the header
+                    using (MySqlConnection con = DatabaseConfig.GetConnection())
+                    using (MySqlCommand cmd = new MySqlCommand("SELECT ADDRESS FROM CUSTOMER_MAST WHERE CUST_ID = @id", con))
+                    {
+                        cmd.Parameters.AddWithValue("@id", customerId.Value);
+                        object result = cmd.ExecuteScalar();
+                        if (result != null) custAddress = result.ToString();
+                    }
+                }
+
+                deliveryReceiptPrintRowIndex = 0;
+                deliveryReceiptPageNumber = 1;
+                printDoc.DefaultPageSettings.PaperSize = new PaperSize("A4", 827, 1169);
+                printDoc.PrintPage += (sender, e) => PrintDeliveryReceiptPage(sender, e, grandTotal, customerId, customerName, custAddress);
+            }
+            else
+            {
+                printDoc.PrintPage += (sender, e) => PrintReceiptPage(sender, e, grandTotal, amountReceived, changeAmount);
+            }
 
             try
             {
-                // printDoc.Print();
-                PrintPreviewDialog previewDialog = new PrintPreviewDialog();
-                previewDialog.Document = printDoc;
-
-                previewDialog.Width = 400;
-                previewDialog.Height = 600;
-
+                PrintPreviewDialog previewDialog = new PrintPreviewDialog { Document = printDoc, Width = 600, Height = 800 };
                 bool wasTopMost = this.TopMost;
                 this.TopMost = false;
-
-                // Show the receipt on the screen!
                 previewDialog.ShowDialog(this);
-
                 this.TopMost = wasTopMost;
             }
             catch (Exception ex)
@@ -1501,6 +1532,133 @@ namespace EnchantedPOS
             yPos += 25;
 
             g.DrawString("This invoice shall be valid \n for five(5) days from the date \n of the permit to use.", fontRegular, brush, centerMargin, yPos, centerAlign);
+        }
+
+        private void PrintDeliveryReceiptPage(object sender, PrintPageEventArgs e, decimal grandTotal, int? customerId, string customerName, string customerAddress)
+        {
+            Graphics g = e.Graphics;
+
+            Font fontSmall = new Font("Arial", 9);
+            Font fontRegular = new Font("Arial", 10);
+            Font fontBold = new Font("Arial", 10, FontStyle.Bold);
+            Font fontHeaderUnderline = new Font("Arial", 10, FontStyle.Underline | FontStyle.Bold);
+
+            Font fontTitle = new Font("Times New Roman", 18, FontStyle.Bold);
+            Font fontBusinessRed = new Font("Times New Roman", 14, FontStyle.Bold);
+            Brush brush = Brushes.Black;
+            Brush redBrush = Brushes.DarkRed;
+
+            float yPos = 50;
+            float leftMargin = 40;
+            float rightMargin = 780;
+            float pageBottom = e.PageBounds.Height - 200; // Leave room for signatures
+
+            StringFormat centerAlign = new StringFormat() { Alignment = StringAlignment.Center };
+            StringFormat rightAlign = new StringFormat() { Alignment = StringAlignment.Far };
+
+            // --- A4 HEADER ---
+            g.DrawString(headerBusinessName, fontBusinessRed, redBrush, e.PageBounds.Width / 2, yPos, centerAlign);
+            yPos += 22;
+            g.DrawString(headerAddress, fontRegular, brush, e.PageBounds.Width / 2, yPos, centerAlign);
+            yPos += 45;
+
+            g.DrawString("Delivery Receipt", fontTitle, brush, e.PageBounds.Width / 2, yPos, centerAlign);
+            yPos += 45;
+
+            // --- CUSTOMER & INVOICE BLOCKS ---
+            g.DrawString($"Customer Code:  {customerId}", fontRegular, brush, leftMargin, yPos);
+            g.DrawString("Invoice Number:", fontRegular, brush, 600, yPos);
+            g.DrawString(currentInvoiceNumber.ToString(), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 18;
+
+            g.DrawString($"Customer Name:  {customerName}", fontRegular, brush, leftMargin, yPos);
+            g.DrawString("Date:", fontRegular, brush, 600, yPos);
+            g.DrawString(currentTransDate.ToString("MM/dd/yyyy"), fontRegular, brush, rightMargin, yPos, rightAlign);
+            yPos += 18;
+
+            g.DrawString($"Address:        {customerAddress}", fontRegular, brush, leftMargin, yPos);
+            yPos += 40;
+
+            g.DrawString($"Page {deliveryReceiptPageNumber}", fontRegular, brush, leftMargin, yPos);
+            yPos += 20;
+
+            // --- COLUMN HEADERS ---
+            float colBarcode = leftMargin;
+            float colQty = 190;
+            float colProd = 240;
+            float colPrice = 660;
+            float colAmount = rightMargin;
+
+            g.DrawString("BAR_CODE", fontHeaderUnderline, brush, colBarcode, yPos);
+            g.DrawString("QTY", fontHeaderUnderline, brush, colQty, yPos);
+            g.DrawString("PROD_NAME", fontHeaderUnderline, brush, colProd, yPos);
+            g.DrawString("PRICE", fontHeaderUnderline, brush, colPrice, yPos, rightAlign);
+            g.DrawString("AMOUNT", fontHeaderUnderline, brush, colAmount, yPos, rightAlign);
+            yPos += 30;
+
+            // --- ITEM LOOP (Paginated) ---
+            while (deliveryReceiptPrintRowIndex < dataGridView1.Rows.Count)
+            {
+                DataGridViewRow row = dataGridView1.Rows[deliveryReceiptPrintRowIndex];
+                if (row.Cells[0].Value == null)
+                {
+                    deliveryReceiptPrintRowIndex++;
+                    continue;
+                }
+
+                string barcode = row.Cells[0].Value.ToString();
+                string name = row.Cells[1].Value.ToString();
+                decimal.TryParse(row.Cells[2].Value?.ToString(), out decimal qty);
+                decimal.TryParse(row.Cells[3].Value?.ToString(), out decimal price);
+                decimal.TryParse(row.Cells[4].Value?.ToString(), out decimal amount);
+
+                if (name.Length > 50) name = name.Substring(0, 47) + "...";
+
+                g.DrawString(barcode, fontSmall, brush, colBarcode, yPos);
+                g.DrawString(qty.ToString("0.00"), fontSmall, brush, colQty, yPos);
+                g.DrawString(name, fontSmall, brush, colProd, yPos);
+                g.DrawString(price.ToString("N2"), fontSmall, brush, colPrice, yPos, rightAlign);
+                g.DrawString(amount.ToString("N2"), fontSmall, brush, colAmount, yPos, rightAlign);
+
+                yPos += 22;
+                deliveryReceiptPrintRowIndex++;
+
+                if (yPos >= pageBottom)
+                {
+                    e.HasMorePages = true;
+                    deliveryReceiptPageNumber++;
+                    return; // Pause and generate next page
+                }
+            }
+
+            yPos += 15;
+            g.DrawString("Total Amount=>", fontBold, brush, colPrice, yPos, rightAlign);
+            Font fontTotal = new Font("Times New Roman", 14, FontStyle.Bold);
+            g.DrawString(grandTotal.ToString("N2"), fontTotal, brush, colAmount, yPos, rightAlign);
+            yPos += 50;
+
+            g.DrawString("Prepared By:", fontSmall, brush, leftMargin, yPos);
+            g.DrawString("Checked By:", fontSmall, brush, 240, yPos);
+            g.DrawString("Received By:", fontSmall, brush, 440, yPos);
+            g.DrawString("Bulto:", fontSmall, brush, 640, yPos);
+            yPos += 25;
+
+            g.DrawLine(Pens.Black, leftMargin, yPos, 200, yPos);
+            g.DrawLine(Pens.Black, 240, yPos, 400, yPos);
+            g.DrawLine(Pens.Black, 440, yPos, 600, yPos);
+            g.DrawLine(Pens.Black, 640, yPos, 780, yPos);
+            yPos += 30;
+
+            g.DrawString("TYPE OF PAYMENT   [  ] CHECK   [  ] PARTIAL   [  ] CASH", fontSmall, brush, leftMargin, yPos);
+            yPos += 35;
+
+            g.DrawString("AMOUNT PAID", fontSmall, brush, leftMargin, yPos);
+            g.DrawLine(Pens.Black, 140, yPos + 12, 330, yPos + 12);
+
+            g.DrawString("BALANCE", fontSmall, brush, 380, yPos);
+            g.DrawLine(Pens.Black, 450, yPos + 12, 640, yPos + 12);
+
+            e.HasMorePages = false;
         }
 
         private void CalculateVATBreakdown(out decimal vatableSales, out decimal vatAmount, out decimal vatExempt, out decimal zeroRated)

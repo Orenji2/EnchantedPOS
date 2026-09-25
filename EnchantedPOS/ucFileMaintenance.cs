@@ -324,10 +324,10 @@ namespace EnchantedPOS
                         try
                         {
                             cmd.ExecuteNonQuery();
-                            MessageBox.Show("User deleted successfully.", "Deleted", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show("Customer deleted successfully.", "Deleted", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                             ClearTextBoxes();
-                            ToggleEditMode(false);
+                            ToggleCustEditMode(false);
                             LoadUsers(); // Refresh the grid to remove the deleted user
                         }
                         catch (Exception ex)
@@ -558,7 +558,7 @@ namespace EnchantedPOS
             // Prevent editing if they haven't clicked a user in the grid yet
             if (txtCustName.Tag == null)
             {
-                MessageBox.Show("Please select a user from the list first.", "No User Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please select a Customer from the list first.", "No Customer Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
