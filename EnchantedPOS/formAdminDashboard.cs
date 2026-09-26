@@ -70,5 +70,13 @@ namespace EnchantedPOS
             ucInventoryAdjustment adjustment = new ucInventoryAdjustment();
             LoadModule(adjustment);
         }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            using (formAdvancedAdmin formAdvanced = new formAdvancedAdmin())
+            {
+                formAdvanced.ShowDialog(this);
+            }
+        }
     }
 }

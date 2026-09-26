@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             panelSidebar = new Panel();
+            button2 = new Button();
             btnInventoryManagement = new Button();
             btnSupplierInvoiceEntry = new Button();
             button1 = new Button();
@@ -43,6 +44,7 @@
             // panelSidebar
             // 
             panelSidebar.BackColor = Color.DarkBlue;
+            panelSidebar.Controls.Add(button2);
             panelSidebar.Controls.Add(btnInventoryManagement);
             panelSidebar.Controls.Add(btnSupplierInvoiceEntry);
             panelSidebar.Controls.Add(button1);
@@ -55,6 +57,20 @@
             panelSidebar.Name = "panelSidebar";
             panelSidebar.Size = new Size(250, 721);
             panelSidebar.TabIndex = 0;
+            // 
+            // button2
+            // 
+            button2.Dock = DockStyle.Bottom;
+            button2.FlatAppearance.BorderSize = 0;
+            button2.FlatStyle = FlatStyle.Flat;
+            button2.ForeColor = Color.White;
+            button2.Location = new Point(0, 671);
+            button2.Name = "button2";
+            button2.Size = new Size(250, 50);
+            button2.TabIndex = 7;
+            button2.Text = "ADVANCED MODE";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
             // 
             // btnInventoryManagement
             // 
@@ -187,5 +203,6 @@
         private Button button1;
         private Button btnSupplierInvoiceEntry;
         private Button btnInventoryManagement;
+        private Button button2;
     }
 }
